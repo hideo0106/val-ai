@@ -1,0 +1,2 @@
+character_id,name,complete,incomplete_symbol,complete_symbol
+1,"Peblos' Lost Goat",false,%peblos_goat_missing%,%peblos_goat_found%

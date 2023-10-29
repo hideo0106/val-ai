@@ -64,5 +64,5 @@ class CaptureFD:
         return self.captured_stderr.getvalue()
 
 def wrap_print(text, width=80):
-    """Print text wrapped to the given width"""
-    print('\n'.join(wrap(text, width)))
+    """Text wrapped to the given width"""
+    return '\n'.join(wrap(text, width))

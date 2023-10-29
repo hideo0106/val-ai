@@ -74,7 +74,7 @@ class FlowEngine:
         return cparams
 
     @classmethod
-    def factory(cls, model_path : str, model_file : str, **kwargs):
+    def from_config(cls, model_path : str, model_file : str, **kwargs):
         """Create a new FlowEngine with the given parameters"""
         llama_cpp.llama_backend_init(numa=False)
 
@@ -101,7 +101,7 @@ class FlowEngine:
         self.last_n_tokens_data = [0] * self.last_n_size
         self.n_past = 0
 
-    def feed(self, prompt : str, n_batch : int = 512, reset : bool = False, n_ctx : int = 4096, **kwargs):
+    def feed(self, prompt : str, n_batch : int, n_ctx : int, reset : bool = False, **kwargs):
         """Feed the given prompt to the model"""
         kwargs['n_ctx'] = n_ctx
         if reset:
@@ -109,12 +109,12 @@ class FlowEngine:
         b_prompt = prompt.encode('ascii', 'ignore')
         b_prompt = b" " + b_prompt
         pl = len(b_prompt)
-        logger.debug(f"Feeding ({pl}): {b_prompt}")
 
         embd_inp = (llama_cpp.llama_token * n_ctx)()
         n_of_tok = llama_cpp.llama_tokenize(self.model, b_prompt, pl, embd_inp, embd_inp._length_, True)
         #logger.info(f"tokens: {n_of_tok} embeddings: {embd_inp._length_}")
         embd_inp = embd_inp[:n_of_tok]
+        logger.debug(f"Feeding ({pl}/{n_of_tok}): {b_prompt}")
 
         input_consumed = 0
         embd = []
@@ -140,7 +140,7 @@ class FlowEngine:
                 embd = []
 
     def read(self, max_tokens : int = 512, abort_tokens : list = [], stop_tokens : list = [],
-              log_chunk_length : int = 25, n_temp: float = 0.7, **kwargs):
+              sequence_tokens : list = [], log_chunk_length : int = 25, n_temp: float = 0.7, **kwargs):
         """Read from the model until the given number of tokens is reached"""
         remaining_tokens = max_tokens
         last_n_repeat = 64
@@ -149,6 +149,7 @@ class FlowEngine:
         presence_penalty = 0.0
         stop_set = set(stop_tokens)
         abort_set = set(abort_tokens)
+        sequence_set = set([tuple(o) for o in sequence_tokens])
 
         response_tokens = []
         n_generated = 0
@@ -182,16 +183,20 @@ class FlowEngine:
             piece = buf[:n].decode('utf-8', 'ignore')
             running = True
             if piece in abort_set:
-                logger.info(f"Break ({len(log_chunks)}): Aborting on {piece} ({id})")
+                logger.debug(f"Break ({len(log_chunks)}): Aborting on {piece} ({id})")
                 running = False
                 # TODO Do I need to inject a newline in-context here?
                 id = 13
+            elif (last_piece, piece) in sequence_set:
+                logger.debug(f"Break ({len(log_chunks)}): sequence {last_piece}, {piece} ({id})")
+                running = False
+                id = None
             elif piece == '\n' and last_piece == '\n':
-                logger.info(f"Break ({len(log_chunks)}): Double Newline ({id})")
+                logger.debug(f"Break ({len(log_chunks)}): Double Newline ({id})")
                 running = False
                 id = None
             elif id == llama_cpp.llama_token_eos(self.ctx):
-                logger.info(f"Break ({len(log_chunks)}): EOS ({id})")
+                logger.debug(f"Break ({len(log_chunks)}): EOS ({id})")
                 running = False
                 # TODO Do I need to inject a newline in-context here?
                 id = 13
@@ -215,7 +220,7 @@ class FlowEngine:
                 running = False
 
             if len(log_chunks) > 0 and (not running or len(log_chunks) % log_chunk_length == 0):
-                logger.info(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
+                logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
                 log_chunks = []
 
             if not running:

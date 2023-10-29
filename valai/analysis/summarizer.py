@@ -209,9 +209,9 @@ class ChainOfAnalysis:
         return '\n'.join(summary)
 
     @classmethod
-    def factory(cls, **kwargs):
+    def from_config(cls, **kwargs):
         """Create a new instance of ChainOfAnalysis"""
-        engine = FlowEngine.factory(**kwargs)
+        engine = FlowEngine.from_config(**kwargs)
         cod = cls(engine=engine)
         return cod
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         'url': 'https://theeyewall.com/trying-to-make-sense-of-why-otis-exploded-en-route-to-acapulco-this-week/'
     }
     
-    cod = ChainOfAnalysis.factory(**config)
+    cod = ChainOfAnalysis.from_config(**config)
     data = fetch_url(**config)
     summary = cod(data=data, **config)
 

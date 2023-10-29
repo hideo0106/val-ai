@@ -96,6 +96,66 @@ options:
   -v, --verbose         Verbose output
 ```
 
+### Charm Game Engine
+
+I have a little game that is sort of fun, which is a prototype for my context shadowing idea.  I had originally written it for koboldcpp as a test, but now with my FlowEngine, I can just run it here...
+
+```bash
+$ python -m valai charm --help
+usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--rl S_LENGTH] [--rt S_TEMP] [--constrain_data CONSTRAIN_DATA] [--n_batch N_BATCH]
+                   [--n_gpu_layers N_GPU_LAYERS] [--n_ctx N_CTX] [-v]
+
+options:
+  -h, --help            show this help message and exit
+  --model-path MODEL_PATH
+                        Path to model
+  --model-file MODEL_FILE
+                        Model file (gguf)
+  --rl S_LENGTH, --response_length S_LENGTH
+                        Max number of tokens in a game response
+  --rt S_TEMP, --response_temperature S_TEMP
+                        Response generation temperature
+  --constrain_data CONSTRAIN_DATA
+                        Constrain the history to this many bytes
+  --n_batch N_BATCH     LLAMA Batch Size
+  --n_gpu_layers N_GPU_LAYERS
+                        LLAMA GPU Layers
+  --n_ctx N_CTX         LLAMA Context Size
+  -v, --verbose         Verbose output
+```
+
+You get gameplay like this:
+
+```
+> We run towards the blacksmith's shop.
+Narrator: (describing) As you approach the blacksmith's shop, you see a group of people gathered around it. Smoke is billowing out of the door, and you can hear the sound of metal clanging against metal coming from inside.
+
+> I rush to the door.
+Narrator: (describing) The door creaks open as you push it aside. Inside, you see Cedric, the lucky farmer, lying on the ground, surrounded by a group of goblins. They're wielding crude weapons and wearing crude armor made from animal hides.
+
+> Cedric!  I brandish my longsword, and move to engage.
+Narrator: (describing) The goblins turn to face you, snarling and cackling as they prepare for battle. You raise your sword, ready to fight.
+
+> help
+Commands:
+  show, load, save, last, expand, pop, restart, retry, quit, help
+
+>
+```
+
+#### Game Initialization
+
+To play, you have to load the game data into the database.  This is done with the `charm:init` command.
+
+```bash
+$ python -m valai charm:init --help
+usage: valai charm:init [-h] [-v]
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  Verbose output
+```
+
 ## License
 
 This software is licensed under the [Apache 2.0](./LICENSE.txt) license.

@@ -1,0 +1,2 @@
+[Narrator a=witty b=detailed c=dramatic]
+[ZxdrOS a=witty b=dark c=cynical d=manipulative]

@@ -1,0 +1,12 @@
+> ZxdrOS, I am $player.
+ZxdrOS: (authoratative) $player, I am the Game Master.  Your fate is in my hands.
+
+> What is the purpose of this game?
+Narrator: (I ponder the deeper question) You are entering in to the world of Pinnacle.  I, am your narrator, your guide through these lands.  I will describe the things you see, but ZxdrOS the Game Master will determine your fate!  Are you ready?  For, the very fate of the world hangs in your hands, $player.
+
+> What can I do?
+ZxdrOS:  (annoyed) Why don't you try *look*ing around, $player?  
+Narrator: (hesitant) I'd better not tell the player too much.
+
+> *look* at myself
+Narrator:  ($player sees themself) You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.
