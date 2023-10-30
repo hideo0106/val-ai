@@ -22,32 +22,32 @@ class CsvLoader(object):
     TABLE_LIST = ['injection_symbols', 'characters', 'character_traits', 'character_symbols', 'character_quests', 'locations']
 
     @classmethod
-    def from_db(cls, db : DatabaseManager, data_path : str, **kwargs):
+    def from_db(cls, db : DatabaseManager, scene_path : str, **kwargs):
         """
         Factory method to create a CsvLoader instance from a database URI.
 
         Args:
             database_uri (str): The database URI.
-            data_path (str): The path to the directory containing the data files.
+            scene_path (str): The path to the directory containing the data files.
             **kwargs: Arbitrary keyword arguments.
 
         Returns:
             CsvLoader: A CsvLoader instance.
         """
-        loader = cls(db, data_path)
+        loader = cls(db, scene_path)
         Base.metadata.create_all(db.engine)
         return loader
 
-    def __init__(self, db : DatabaseManager, data_path : str):
+    def __init__(self, db : DatabaseManager, scene_path : str):
         """
         Initialize a CsvLoader instance.
 
         Args:
             engine (Engine): The SQLAlchemy engine.
             Session (sessionmaker): The SQLAlchemy session factory.
-            data_path (str): The path to the directory containing the data files.
+            scene_path (str): The path to the directory containing the data files.
         """
-        self.data_path = data_path
+        self.scene_path = scene_path
         self.db = db
 
     def load(self, tablename : str):
@@ -57,10 +57,10 @@ class CsvLoader(object):
         Args:
             tablename (str): The name of the table.
         """
-        data_path = os.path.join(self.data_path, f"{tablename}.csv")
+        scene_path = os.path.join(self.scene_path, f"{tablename}.csv")
 
         # Read the CSV file
-        df = pd.read_csv(data_path)
+        df = pd.read_csv(scene_path)
 
         # Create a new session
         with self.db.get_session() as session:
@@ -128,10 +128,15 @@ class CsvLoader(object):
             # Close the session
             session.close()
 
-def load(print_tables : bool = True, **kwargs):
-    config = { 'database_uri': 'sqlite:///local/char.db', 'data_path': 'scene/verana', **kwargs }
+def load(print_tables : bool = True, database_path : str = 'local/char.db', scene_path: str = 'scene/verana',
+         remove_database : bool = True, **kwargs):
+    config = { 'database_uri': f'sqlite:///{database_path}', **kwargs }
+
+    if remove_database and os.path.exists(database_path):
+        os.remove(database_path)
+
     db = DatabaseManager.from_config(**config)
-    loader = CsvLoader.from_db(db=db, **config)
+    loader = CsvLoader.from_db(db=db, scene_path=scene_path, **config)
     loader.load_all_tables()
     if print_tables:
         CsvLoader.print_tables(db=db, **config)

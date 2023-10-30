@@ -98,10 +98,10 @@ class Scene(object):
     def player_stats(self):
         return f"[{self.player} a=charming b=tricky c=dramatic d=strong e=observant]"
 
-    def fetch_location_data(self):
+    def fetch_location_data(self) -> tuple[list[str], list[str], list[str]]:
         """Fetch and format the data for the current location."""
         if self.location is None:
-            return [], []
+            return [], [], []
         loc_stats = []
         loc_dialog = []
         loc_symbols = []
@@ -110,12 +110,12 @@ class Scene(object):
         #loc_dialog.append(f"> I am in {self.location.name}.\nNarrator: (looking) {self.location.description}")
         return loc_stats, loc_symbols, loc_dialog
 
-    def fetch_character_data(self, session, character_name : str):
+    def fetch_character_data(self, session, character_name : str) -> tuple[list[str], list[str], list[str]]:
         """Fetch and format the data for a character."""
         # Fetch the Character object
         sheet = self.characters.get(character_name, None)
         if sheet is None:
-            return [], []
+            return [], [], []
         # Format the character data
         char_stats = []
         char_symbols = []

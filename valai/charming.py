@@ -38,7 +38,7 @@ class Charmer:
     def from_config(cls, **kwargs) -> 'Charmer':
         config = { 
             'database_uri': 'sqlite:///local/char.db',
-            'data_path': 'scene/verana',
+            'scene_path': 'scene/verana',
             'player': '$player',
             'party': [],
             'location_name': 'Verana',
@@ -53,7 +53,7 @@ class Charmer:
         from .charm.loader import load
         config = { 
             'database_uri': 'sqlite:///local/char.db',
-            'data_path': 'scene/verana',
+            'scene_path': 'scene/verana',
             **kwargs }
         load(**config)
 
@@ -139,16 +139,18 @@ class Charmer:
         with CaptureFD() as co:
             engine = FlowEngine.from_config(**kwargs)
         print("Starting Game...")
+        #engine.clear_saved_context(**kwargs)
         history = cls.load_game_text()
-        logger.debug(f"Loaded Game: {history}")
         initial_q = "> New Game"
         initial_a = "Narrator: (informative) Welcome to Verana"
         if history is None:
             history = [initial_q, initial_a]
+        logger.debug(f"Loaded Game: {history}")
+        if True:
             expanded = charmer(history, **kwargs)
-        else:
-            expanded = charmer(history, **kwargs)
-        engine.feed(prompt=expanded, reset=True, **kwargs)
+            engine.feed(prompt=expanded, reset=True, **kwargs)
+            #engine.save_context(**kwargs)
+            #logger.info("Game State Saved")
         running = True
         cls.print_history(history, 10)
         refresh = 5
@@ -190,6 +192,7 @@ class Charmer:
                 while len(history[-1]) == 0 or history[-1][0] != '>':
                     history.pop()
                 history.pop()
+                refresh = 0
                 print("Popped Last Entry")
                 continue
             elif action == 'retry':

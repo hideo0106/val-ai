@@ -12,9 +12,9 @@ class Librarian(object):
     """A class for managing and reading from a library of text files."""
 
     @classmethod
-    def from_config(cls, data_path : str, library_folder : str = 'library', **kwargs):
+    def from_config(cls, scene_path : str, library_folder : str = 'library', **kwargs):
         """Factory method to create a Librarian object from a config dictionary."""
-        library_path = os.path.join(data_path, library_folder)
+        library_path = os.path.join(scene_path, library_folder)
 
         return cls(library_path)
 

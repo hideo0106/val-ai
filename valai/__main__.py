@@ -7,7 +7,11 @@ from .ioutil import CaptureFD
 VERSION = "0.1.0"
 
 DEFAULT_MODEL_PATH = 'local/models'
+DEFAULT_SCENE_PATH = 'scene/verana'
 DEFAULT_MODEL = 'zephyr-7b-beta.Q8_0.gguf'
+DEFAULT_GPU_LAYERS = 14
+DEFAULT_BATCH_SIZE = 512
+DEFAULT_CONTEXT_SIZE = 2 ** 12
     
 def run_summarize(url, **kwargs):
     co = None
@@ -61,9 +65,9 @@ if __name__ == '__main__':
     summary_parser.add_argument('--ot', '--observation_temperature', type=float, default=0.7, dest="o_temp", help='Observation generation temperature')
     summary_parser.add_argument('--tt', '--theory_temperature', type=float, default=1.0, dest="t_temp", help='Theory generation temperature')
     summary_parser.add_argument('--constrain_data', type=int, default=12000, help='Constrain the url data to this many bytes')
-    summary_parser.add_argument('--n_batch', type=int, default=512, help='LLAMA Batch Size')
-    summary_parser.add_argument('--n_gpu_layers', type=int, default=14, help='LLAMA GPU Layers')
-    summary_parser.add_argument('--n_ctx', type=int, default=2 ** 14, help='LLAMA Context Size')
+    summary_parser.add_argument('--n_batch', type=int, default=DEFAULT_BATCH_SIZE, help='LLAMA Batch Size')
+    summary_parser.add_argument('--n_gpu_layers', type=int, default=DEFAULT_GPU_LAYERS, help='LLAMA GPU Layers')
+    summary_parser.add_argument('--n_ctx', type=int, default=DEFAULT_CONTEXT_SIZE, help='LLAMA Context Size')
     summary_parser.add_argument('--log_chunk_length', type=int, default=50, help='Length of generated log chunks')
     summary_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
     summary_parser.add_argument('url', type=str, metavar='URL', help='URL to summarize')
@@ -71,15 +75,17 @@ if __name__ == '__main__':
     charm_parser = argparse.ArgumentParser(add_help=False)
     charm_parser.add_argument('--model-path', type=str, default=DEFAULT_MODEL_PATH, help='Path to model')
     charm_parser.add_argument('--model-file', type=str, default=DEFAULT_MODEL, help='Model file (gguf)')
+    charm_parser.add_argument('--scene_path', type=str, default=DEFAULT_SCENE_PATH, help='Path to scene')
     charm_parser.add_argument('--rl', '--response_length', type=int, default=250, dest='r_length', help='Max number of tokens in a game response')
     charm_parser.add_argument('--rt', '--response_temperature', type=float, default=0.7, dest="r_temp", help='Response generation temperature')
     charm_parser.add_argument('--constrain_data', type=int, default=12000, help='Constrain the history to this many bytes')
-    charm_parser.add_argument('--n_batch', type=int, default=512, help='LLAMA Batch Size')
-    charm_parser.add_argument('--n_gpu_layers', type=int, default=14, help='LLAMA GPU Layers')
-    charm_parser.add_argument('--n_ctx', type=int, default=2 ** 14, help='LLAMA Context Size')
+    charm_parser.add_argument('--n_batch', type=int, default=DEFAULT_BATCH_SIZE, help='LLAMA Batch Size')
+    charm_parser.add_argument('--n_gpu_layers', type=int, default=DEFAULT_GPU_LAYERS, help='LLAMA GPU Layers')
+    charm_parser.add_argument('--n_ctx', type=int, default=DEFAULT_CONTEXT_SIZE, help='LLAMA Context Size')
     charm_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
 
     charm_load_parser = argparse.ArgumentParser(add_help=False)
+    charm_load_parser.add_argument('--scene_path', type=str, default=DEFAULT_SCENE_PATH, help='Path to scene')
     charm_load_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
 
     # Add your original parser as a subparser

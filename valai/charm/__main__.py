@@ -11,10 +11,9 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    config = { }
     config = { 
         'database_uri': 'sqlite:///local/char.db',
-        'data_path': 'scene/verana',
+        'scene_path': 'scene/verana',
         'player': '$player',
         'party': [],
         'location_name': 'Verana',
