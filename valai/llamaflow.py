@@ -133,6 +133,9 @@ class FlowEngine:
         self.last_n_size = 64
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens: list[llama_cpp.llama_token] = []
+        self.current_system : Optional[str] = None
+        self.n_system = 0
+        self.system_tokens : List[llama_cpp.llama_token] = []
     
     def load_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
         if not os.path.exists(save_file):
@@ -141,52 +144,91 @@ class FlowEngine:
 
         # Load state from file
         state_size = llama_cpp.llama_get_state_size(self.ctx)
-        logger.info(f"State size: {state_size}")
+        logger.debug(f"Context: State size: {state_size}")
         state_mem = (c_uint8 * state_size)()
 
         with open(save_file, "rb") as fp_read:
             bytes_read = fp_read.readinto(state_mem)
-            logger.info(f"Read {bytes_read} {state_size} bytes from {save_file}")
+            logger.info(f"Context: Read {bytes_read} {state_size} bytes from {save_file}")
             if bytes_read != state_size:
                 logger.error("Error: failed to read state")
                 return -1
 
-        logger.info(f"Setting state data")
-        llama_cpp.llama_set_state_data(self.ctx, state_mem)
-        logger.info(f" state data set")
+        logger.debug(f"Context: Setting state data")
+        rc = llama_cpp.llama_set_state_data(self.ctx, state_mem)
 
-        return 1
+        return rc
 
     def save_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
         if len(self.session_tokens) > 0:
             state_size = llama_cpp.llama_get_state_size(self.ctx)
             state_mem = (c_uint8 * state_size)()
 
-            llama_cpp.llama_copy_state_data(self.ctx, state_mem)
+            rc = llama_cpp.llama_copy_state_data(self.ctx, state_mem)
+            if rc < 0:
+                logger.error("Failed to copy state data")
+                return rc
 
             # Save the data to a binary file
             with open(save_file, "wb") as fp:
                 fp.write(state_mem)
         
             llama_cpp.llama_set_state_data(self.ctx, state_mem)
+
+            return rc
+        return 0
     
     def clear_saved_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
         """Delete our file"""
         if os.path.exists(save_file):
             os.remove(save_file)
-            return 1
-        return 0
+            return 0
+        return 1
 
     def reset(self, **kwargs):
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens = []
         self.n_past = 0
 
-    def feed(self, prompt : str, n_batch : int, n_ctx : int, reset : bool = False, **kwargs) -> int:
+    def execute(self, prompt : str, system : Optional[str] = None,
+                restart : bool = False, rebuild : bool = False,
+             **kwargs) -> int:
+        """Execute the given prompt with the model"""
+        send_system = False
+        send_prompt = True
+
+        if system is not None and system != self.current_system or restart:
+            send_system = True
+            self.current_system = system
+        
+        if send_system and self.current_system is not None:
+            self.reset()
+            rc = self.feed(prompt=self.current_system, **kwargs)
+            if rc < 0:
+                logger.error("Failed to feed system prompt")
+                return rc
+            self.n_system = self.n_past
+            self.system_tokens = self.session_tokens.copy()
+            rc = self.save_context(**kwargs)
+            if rc < 0:
+                logger.error("Failed to save our context")
+                return rc
+
+        if rebuild:
+            # Load our saved system
+            rc = self.load_context(**kwargs)
+            if rc < 0:
+                logger.error("Failed to load our context")
+                return rc
+            self.n_past = self.n_system
+            self.session_tokens = self.system_tokens.copy()
+
+        rc = self.feed(prompt=prompt, **kwargs)
+        return rc
+
+    def feed(self, prompt : str, n_batch : int, n_ctx : int, **kwargs) -> int:
         """Feed the given prompt to the model"""
         kwargs['n_ctx'] = n_ctx
-        if reset:
-            self.reset()
         b_prompt = prompt.encode('ascii', 'ignore')
         b_prompt = b" " + b_prompt
         pl = len(b_prompt)
@@ -209,6 +251,7 @@ class FlowEngine:
 
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
+        #logger.debug(prompt)
 
         if True:
             embd = []
@@ -231,6 +274,7 @@ class FlowEngine:
                         logger.error(f"Break - Model Eval return code {return_code}")
                         break
                     
+                    self.session_tokens += tokens
                     self.n_past += len(embd)
                     embd = []
         else:

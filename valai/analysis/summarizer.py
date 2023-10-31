@@ -57,7 +57,7 @@ class ChainOfAnalysis:
 """
 
         #logger.debug(f"Summarizing with prompt: {prompt}")
-        self.engine.feed(prompt=prompt)
+        self.engine.feed(prompt=prompt, **kwargs)
         logger.info(f"Analyzing ({self.engine.n_past})")
         logic = []
         generated = []
@@ -67,7 +67,7 @@ class ChainOfAnalysis:
             topic = random.choice(logic)
             logic.remove(topic)
             o_prompt = f"- {topic} {n}:"
-            self.engine.feed(prompt=o_prompt)
+            self.engine.feed(prompt=o_prompt, **kwargs)
             generated += o_prompt
             generated += self.engine.read(max_tokens=o_length, abort_tokens=['|', '`'], stop_tokens=['\n'],
                                           n_temp=o_temp, **kwargs)
@@ -81,12 +81,12 @@ class ChainOfAnalysis:
 ### *Summary* (erudite and informative; {paragraphs} paragraphs):
 ```summary"""
 
-        self.engine.feed(prompt=prompt)
+        self.engine.feed(prompt=prompt, **kwargs)
         logger.info(f"Summarizing ({self.engine.n_past})")
         generated = []
         for p in range(paragraphs):
             prompt = f"\n## Paragraph {p} ({paragraph_length(s_length)})\n"
-            self.engine.feed(prompt=prompt)
+            self.engine.feed(prompt=prompt, **kwargs)
             information = self.engine.read(max_tokens=s_length, stop_tokens=['\n'], abort_tokens=['`'],
                                           n_temp=s_temp, **kwargs)
             generated.append(''.join(information))
@@ -108,7 +108,7 @@ class ChainOfAnalysis:
 """
 
         logger.debug(f"Improving with prompt: {prompt}")
-        self.engine.feed(prompt=prompt)
+        self.engine.feed(prompt=prompt, **kwargs)
         logger.info(f"Theorizing ({self.engine.n_past})")
         generated = []
         logic = []
@@ -119,7 +119,7 @@ class ChainOfAnalysis:
             logic.remove(topic)
             prompt = f"- Information {self.information_idx}: {topic}"
             generated.append(prompt)
-            self.engine.feed(prompt=prompt)
+            self.engine.feed(prompt=prompt, **kwargs)
             information = self.engine.read(max_tokens=t_length, stop_tokens=['\n'],
                                           n_temp=t_temp, **kwargs)
             generated += information
@@ -141,12 +141,12 @@ class ChainOfAnalysis:
 ```summary"""
 
         logger.debug(f"Resummarizing with prompt: {prompt}")
-        self.engine.feed(prompt=prompt)
+        self.engine.feed(prompt=prompt, **kwargs)
         logger.info(f"Resummarizing ({self.engine.n_past})")
         generated = []
         for p in range(paragraphs):
             prompt = f"\n## Paragraph {p} ({paragraph_length(s_length)})\n"
-            self.engine.feed(prompt=prompt)
+            self.engine.feed(prompt=prompt, **kwargs)
             information = self.engine.read(max_tokens=s_length, stop_tokens=['\n'], abort_tokens=['`'],
                                           n_temp=s_temp, **kwargs)
             generated.append(''.join(information))

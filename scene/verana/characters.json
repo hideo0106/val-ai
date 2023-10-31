@@ -1,0 +1,247 @@
+{
+    "locations": [
+        {
+            "name": "Harboria",
+            "symbol": "^location_harboria^"
+        },
+        {
+            "name": "Verana",
+            "symbol": "^location_verana^",
+            "parent_symbol": "=location_harboria=",
+            "related_symbols": ["%well%"]
+        },
+        {
+            "name": "The Golden Stag Inn",
+            "symbol": "^location_inn^",
+            "parent_symbol": "=location_verana=",
+            "related_symbols": ["%mirela_inn%", "%mirela_room%", "%mirela_work%"]
+        },
+        {
+            "name": "The Forge",
+            "symbol": "^location_smithy^",
+            "parent_symbol": "=location_verana=",
+            "related_symbols": []
+        },
+        {
+            "name": "The Verana Woods",
+            "symbol": "^location_woods^",
+            "parent_symbol": "=location_verana=",
+            "related_symbols": ["%woods%"]
+        },
+        {
+            "name": "The Small Tower",
+            "symbol": "^location_small_tower^",
+            "parent_symbol": "=location_woods=",
+            "related_symbols": ["%small_tower%"]
+        }
+    ],
+    "symbols": {
+        "^location_harboria^": { 
+            "value": "The great country of Harboria, spanning the region in the valley.  The capitol of J'Dhang is known far and wide."
+        },
+        "^location_verana^": {
+            "value": "Verana is a small but ancient village in Harboria, far from the capitol.  It is thought of as the backwaters of the kingdom, but is known for fine wood and legends of magic.  It has a poor economy.  The village is in a hollow, with mountains on one side and dark woods on the other."
+        },
+        "^location_woods": {
+            "value": "The woods are thick, but navigable with a machete.  There are many animals and plants, and a few monsters.  There are animals such as deer, rabbits, and squirrels.  There are also monsters such as wolves, bears, and giant spiders.  Kobolds make homes in caves in the surrounding mountains."
+        },
+        "^location_small_tower": {
+            "value": "In a large clearing, the small tower is overgrown with vines and moss.  It is a small tower, only two stories tall.  It is made of stone, and has a wooden door."
+        },
+        "%well%": {
+            "keywords": ["water", "well"],
+            "value": "The well has clear, cool water, but looks deep.  It is the primary source of water for everyone in Verana."
+        },
+        "%woods%": {
+            "keywords": ["forest", "woods"],
+            "value": "The dark and scary woods located on the outskirts of Verana."
+        },
+        "+peblos+": {
+            "keywords": ["peblos", "blacksmith"],
+            "value": "Peblos is the blacksmith of Verana."
+        },
+        "%peblos_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%woods%"],
+            "value": "Peblos is desperately afraid of the legends of monsters and ancient magic that are hidden in the depths of the woods."
+        },
+        "|peblos_goat_missing|": {
+            "keywords": ["goat", "missing"],
+            "related_symbols": ["%woods%", "=location_small_tower="],
+            "value": "Peblos has lost his goat, it wandered off into the woods.  He would be willing to pay someone to go and get it, but he could never go into those scary woods himself."
+        },
+        "|peblos_goat_found|": {
+            "keywords": ["goat", "found"],
+            "related_symbols": [],
+            "value": "Peblos is very happy, $player has found his missing goat that was lost in the woods."
+        },
+        "+mirela+": {
+            "keywords": ["mirela", "innkeeper"],
+            "value": "Mirela is the innkeeper of Verana."
+        },
+        "%mirela_woods%": {
+            "keywords": ["woods"],
+            "related_symbols": ["%woods%"],
+            "value": "Mirela enjoys the mysterious allure of the woods, and uses the tales to entertain guests."
+        },
+        "%mirela_inn%": {
+            "keywords": ["inn", "innkeeper"],
+            "related_symbols": [],
+            "value": "Mirela owns the Golden Stag Inn.  It is her pride and joy."
+        },
+        "%mirela_work%": {
+            "keywords": ["work", "well"],
+            "related_symbols": ["%well%", "%mirela_inn%"],
+            "value": "Mirela has work fetching water from the well, it doesn't pay but will get you room and board in the stable."
+        },
+        "%mirela_room%": {
+            "keywords": ["room"],
+            "related_symbols": ["%mirela_inn%"],
+            "value": "Mirela has two rooms for rent for paying customers, but if you can't pay there is always the stables."
+        },
+        "%mirela_daughter%": {
+            "keywords": ["family"],
+            "related_symbols": ["+mirela+", "+lydia+"],
+            "value": "Lydia is Mirela's daughter.  It's hard being a single parent, but they get by just fine."
+        },
+        "+lydia+": {
+            "keywords": ["lydia"],
+            "related_symbols": ["%mirela_inn%"],
+            "value": "Lydia is Mirela's daughter.  Lydia is the only girl in town. She serves drinks at the Inn."
+        },
+        "%lydia_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%lydia_secret%"],
+            "value": "Lydia sneaks into the woods often.  She has a secret about the woods that she knows."
+        },
+        "%lydia_secret%": {
+            "keywords": ["tower", "secret"],
+            "related_symbols": ["%woods%", "%small_tower%"],
+            "value": "Lydia knows about a small tower a few miles distant in the woods.  She would only ever tell her closest friends, someone who she really trusts."
+        },
+        "%small_tower%": {
+            "keywords": ["tower"],
+            "related_symbols": ["%woods%", "=location_small_tower="],
+            "value": "Hidden in the woods is a small tower, if you can find it."
+        },
+        "+brom+": {
+            "keywords": ["brom", "elder"],
+            "value": "Brom is the village elder of Verana."
+        },
+        "%brom_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%woods%"],
+            "value": "Brom believes in the ancient magic of the woods and respects its power."
+        },
+        "+sibyl+": {
+            "keywords": ["sibyl", "herbalist", "healer"],
+            "value": "Sibyl is the herbalist and healer of Verana."
+        },
+        "%sibyl_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%woods%"],
+            "value": "Sibyl finds the woods a source of medicinal herbs and rare plants, but also respects its dangers."
+        },
+        "+cedric+": {
+            "keywords": ["cedric", "farmer"],
+            "value": "Cedric is the local farmer of Verana."
+        },
+        "%cedric_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%woods%"],
+            "value": "Cedric sees the woods as a necessary evil - home to the pests that threaten his crops, but also the source of firewood and game."
+        }
+    },
+    "characters": [
+        {
+            "id": 1,
+            "name": "Peblos",
+            "symbol": "+peblos+",
+            "related_symbols": ["%peblos_woods%"],
+            "job": "Blacksmith",
+            "traits": ["hardworking", "afraid", "superstitious", "strong", "loyal"],
+            "location_symbol": "=location_smithy=",
+            "description": "A towering figure with muscular arms hardened by years of forging iron. His hair is as black as the coal he works with, and his eyes hold a fiery intensity. His clothes are perpetually dusted with soot, and the clanging sound of his hammer hitting metal is a constant in Verana.",
+            "disposition": 0,
+            "status": "Okay",
+            "quests": [{
+                "symbol": "|peblos_quest_goat|",
+                "name": "Peblos' Lost Goat",
+                "complete": false,
+                "incomplete_symbol": "|peblos_goat_missing|",
+                "complete_symbol": "|peblos_goat_found|"
+            }]
+        },
+        {
+            "id": 2,
+            "name": "Mirela",
+            "symbol": "+mirela+",
+            "related_symbols": ["%mirela_woods%", "%mirela_inn%", "%mirela_work%", "%mirela_room%", "%mirela_daughter%"],
+            "job": "Innkeeper",
+            "traits": ["hospitable", "gossipy", "cheerful", "observant", "cunning"],
+            "location_symbol": "=location_inn=",
+            "description": "A plump, cheerful woman with rosy cheeks and sparkling eyes. Her hair is a flurry of graying curls, usually hidden under a bonnet. She wears a well-worn apron over her dress and is rarely seen without a welcoming smile.  Mirela is the mother of Lydia.",
+            "disposition": 20,
+            "status": "At The Inn"
+        },
+        {
+            "id":           3,
+            "name":         "Brom",
+            "symbol":       "+brom+",
+            "related_symbols":     ["%brom_woods%"],
+            "job":          "Village Elder",
+            "traits":       ["wise", "patient", "mystical", "respected", "authoritative"],
+            "location_symbol": "=location_verana=",
+            "description":  "An elderly man with a long white beard and wrinkled skin that shows his age. He walks with a slight stoop but carries a sense of dignity and wisdom. His old, worn-out robe gives him an air of authority and respect.",
+            "disposition":  0,
+            "status":       "Walking Around Town"
+        },
+        {
+            "id":           4,
+            "name":         "Sibyl",
+            "symbol":       "+sibyl+",
+            "related_symbols":     ["%sibyl_woods%"],
+            "job":          "Herbalist and Healer",
+            "traits":       ["knowledgeable", "caring", "secretive", "mysterious", "empathetic"],
+            "location_symbol": "=location_verana=",
+            "description":  "A woman of indeterminate age with a serenity that puts people at ease. Her long, braided hair is as silver as the moonlight, and her eyes are a deep green like the herbs she works with. She often wears a cloak adorned with pouches containing her herbal concoctions.",
+            "disposition":  0
+        },
+        {
+            "id": 5,
+            "name": "Cedric",
+            "symbol": "+cedric+",
+            "related_symbols": ["%cedric_woods%"],
+            "job": "Farmer",
+            "traits": ["hardworking", "practical", "jolly", "optimistic", "down-to-earth"],
+            "location_symbol": "=location_verana=",
+            "description": "He is a man of the earth - strong and robust with a sun-kissed skin from working in the fields. His hands are rough and calloused, his hair is sun-bleached, and his clothes are simple but sturdy. He wears a constant smile under his straw hat, regardless of the weather.",
+            "disposition": 0,
+            "status": "In The Fields"
+        },
+        {
+            "id": 6,
+            "name": "Lydia",
+            "symbol": "+lydia+",
+            "related_symbols": ["%lydia_woods%", "%lydia_secret%"],
+            "job": "Innkeeper's Daughter",
+            "traits": ["cunning", "mischevious", "liar", "thief", "narcissist"],
+            "location_symbol": "=location_verana=",
+            "description": "The mischevious 19 year old daughter of the innkeeper Mirela is quite well known by everyone in the village.  She is more about pranks than actually causing harm.  She is wiry and quick, wearing a simple dress, she has short black hair and brown eyes.  She secrets a pocket knife she uses for her mischief.",
+            "disposition": 0,
+            "status": "Sneaking Around"
+        },
+        {
+            "id": 7,
+            "name": "Thomas",
+            "symbol": "+thomas+",
+            "related_symbols": ["%thomas_woods%"],
+            "job": "Woodsman and Lumberjack",
+            "traits": ["clever", "thrillseeker", "liar", "hunter", "survivalist"],
+            "location_symbol": "=location_woods=",
+            "description": "A cloaked figure with a bow and quiver of arrows.  He is a skilled hunter and tracker.  He is a bit of a loner, but is always willing to help out the village.  He is a bit of a thrillseeker, and is always looking for the next big hunt.",
+            "disposition": 0,
+            "status": "Hunting"
+        }
+    ]
+}

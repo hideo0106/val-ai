@@ -35,17 +35,20 @@ CMAKE_ARGS="-DLLAMA_CUBLAS=on" python3 -m pip install ./llama-cpp-python/ --forc
 To run the CLI, simply invoke the package as a module:
 
 ```bash
-$ python -m valai --help
-usage: valai [-h] {summarize} ...
+$ python -m valai
+usage: valai [-h] {summarize,charm,charm:init} ...
 
-ValAI CLI (v0.0.1)
+ValAI CLI (v0.1.1)
 
 options:
-  -h, --help   show this help message and exit
+  -h, --help            show this help message and exit
 
 subcommands:
-  {summarize}  Available commands
-    summarize  Summarize an article
+  {summarize,charm,charm:init}
+                        Available commands
+    summarize           Summarize an article
+    charm               Run Charm
+    charm:init          Charm Init Database
 ```
 
 ## Models
@@ -65,9 +68,8 @@ Abstractive summarization is the process of generating new text that is not pres
 ```bash
 $ python -m valai summarize --help
 usage: valai summarize [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [-n ITERATIONS] [-p PARAGRAPHS] [-o OBSERVATIONS] [-t THEORIES]
-                       [--sl S_LENGTH] [--ol O_LENGTH] [--tl T_LENGTH] [--st S_TEMP] [--ot O_TEMP] [--tt T_TEMP]
-                       [--constrain_data CONSTRAIN_DATA] [--n_batch N_BATCH] [--n_gpu_layers N_GPU_LAYERS] [--n_ctx N_CTX]
-                       [--log_chunk_length LOG_CHUNK_LENGTH] [-v]
+                       [--sl S_LENGTH] [--ol O_LENGTH] [--tl T_LENGTH] [--st S_TEMP] [--ot O_TEMP] [--tt T_TEMP] [--constrain CONSTRAIN_DATA]
+                       [--batch N_BATCH] [--layers N_GPU_LAYERS] [--ctx N_CTX] [--log-chunk LOG_CHUNK_LENGTH] [-v]
                        URL
 
 positional arguments:
@@ -87,25 +89,25 @@ options:
                         Number of initial observations to generate
   -t THEORIES, --theories THEORIES
                         Number of missing information theories to generate
-  --sl S_LENGTH, --summary_length S_LENGTH
+  --sl S_LENGTH, --summary-length S_LENGTH
                         Max number of tokens in a summary paragraph
-  --ol O_LENGTH, --observation_length O_LENGTH
+  --ol O_LENGTH, --observation-length O_LENGTH
                         Max number of tokens in a observation
-  --tl T_LENGTH, --theory_length T_LENGTH
+  --tl T_LENGTH, --theory-length T_LENGTH
                         Max number of tokens in a theory
-  --st S_TEMP, --summary_temperature S_TEMP
+  --st S_TEMP, --summary-temperature S_TEMP
                         Summary generation temperature
-  --ot O_TEMP, --observation_temperature O_TEMP
+  --ot O_TEMP, --observation-temperature O_TEMP
                         Observation generation temperature
-  --tt T_TEMP, --theory_temperature T_TEMP
+  --tt T_TEMP, --theory-temperature T_TEMP
                         Theory generation temperature
-  --constrain_data CONSTRAIN_DATA
+  --constrain CONSTRAIN_DATA
                         Constrain the url data to this many bytes
-  --n_batch N_BATCH     LLAMA Batch Size
-  --n_gpu_layers N_GPU_LAYERS
+  --batch N_BATCH       LLAMA Batch Size
+  --layers N_GPU_LAYERS
                         LLAMA GPU Layers
-  --n_ctx N_CTX         LLAMA Context Size
-  --log_chunk_length LOG_CHUNK_LENGTH
+  --ctx N_CTX           LLAMA Context Size
+  --log-chunk LOG_CHUNK_LENGTH
                         Length of generated log chunks
   -v, --verbose         Verbose output
 ```
@@ -116,8 +118,8 @@ I have a little game that is sort of fun, which is a prototype for my context sh
 
 ```bash
 $ python -m valai charm --help
-usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--rl S_LENGTH] [--rt S_TEMP] [--constrain_data CONSTRAIN_DATA] [--n_batch N_BATCH]
-                   [--n_gpu_layers N_GPU_LAYERS] [--n_ctx N_CTX] [-v]
+usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--scene-path SCENE_PATH] [--rl R_LENGTH] [--rt R_TEMP]
+                   [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS] [--ctx N_CTX] [-v]
 
 options:
   -h, --help            show this help message and exit
@@ -125,16 +127,18 @@ options:
                         Path to model
   --model-file MODEL_FILE
                         Model file (gguf)
-  --rl S_LENGTH, --response_length S_LENGTH
+  --scene-path SCENE_PATH
+                        Path to scene
+  --rl R_LENGTH, --length R_LENGTH
                         Max number of tokens in a game response
-  --rt S_TEMP, --response_temperature S_TEMP
+  --rt R_TEMP, --temperature R_TEMP
                         Response generation temperature
-  --constrain_data CONSTRAIN_DATA
+  --constrain CONSTRAIN_DATA
                         Constrain the history to this many bytes
-  --n_batch N_BATCH     LLAMA Batch Size
-  --n_gpu_layers N_GPU_LAYERS
+  --batch N_BATCH       LLAMA Batch Size
+  --layers N_GPU_LAYERS
                         LLAMA GPU Layers
-  --n_ctx N_CTX         LLAMA Context Size
+  --ctx N_CTX           LLAMA Context Size
   -v, --verbose         Verbose output
 ```
 
@@ -163,11 +167,13 @@ To play, you have to load the game data into the database.  This is done with th
 
 ```bash
 $ python -m valai charm:init --help
-usage: valai charm:init [-h] [-v]
+usage: valai charm:init [-h] [--scene_path SCENE_PATH] [-v]
 
 options:
-  -h, --help     show this help message and exit
-  -v, --verbose  Verbose output
+  -h, --help            show this help message and exit
+  --scene_path SCENE_PATH
+                        Path to scene
+  -v, --verbose         Verbose output
 ```
 
 ## License

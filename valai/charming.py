@@ -2,7 +2,8 @@
 
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
+from valai.charm.flatdata import ContextShadowing
 
 from valai.ioutil import CaptureFD
 
@@ -17,22 +18,75 @@ logger = logging.getLogger(__name__)
 # implementation of the context shadowing concept.
 
 class Charmer:
-    def __init__(self, db, scene, charm) -> None:
+    def __init__(self, db : DatabaseManager, scene : Scene, charm : ContextInjection) -> None:
         self.db = db
         self.scene = scene
         self.charm = charm
+        self.shadow = ContextShadowing.from_file()
+        self.turn_count = 0
+        self.recent = {}
 
-    def __call__(self, history : list[str], **kwargs) -> str:
-        prompt = '\n'.join([f"{h}" if len(h) > 0 and h[0] == '>' else h for h in history])
-        expansion = self.charm.expand(prompt, **kwargs)
-        expansion_state = expansion.get('state', 'error')
-        if expansion_state == 'content' and 'content' in expansion:
-            newprompt =  expansion['content']
-            logging.debug(f"Prompt Expanded:\n{newprompt}")
-            return f"{newprompt}\n"
-        else:
-            logging.warn("Non Content Response:", expansion)
-            return prompt
+    @staticmethod
+    def fix_prompt(lines : List[str]) -> List[str]:
+        prev = None
+        for line in lines:
+            if len(line) > 0 and line[0] == '>':
+                yield ''
+            if prev is None or len(prev) == 0:
+                yield line
+            elif len(line) > 0:
+                if prev[0] != '[' and line[0] == '[':
+                    yield ''
+                yield line
+            prev = line
+        return []
+
+    def system(self, **kwargs) -> List[str]:
+        header : List[str] = self.charm.header().split('\n')
+        mid_pre : List[str] = self.charm.mid_pre().split('\n')
+        mid_post : List[str] = self.charm.mid_post().split('\n')
+        assets = self.shadow.get_assets()
+        sheets = list(assets['sheets'])
+        dialog = list(assets['dialog'])
+        system = header + sheets + mid_pre + dialog + sheets + mid_post
+        fixed = self.fix_prompt(system)
+        prompt = '\n'.join(fixed)
+        return prompt
+
+    def __call__(self, history : list[str], **kwargs) -> List[str]:
+        self.turn_count = 0
+
+        expansion = self.shadow.expand(history, **kwargs)
+        expansion = [e for e in expansion]
+        new_items = [e for e in expansion if e not in history]
+        
+        self.recent = {e: self.turn_count for e in new_items}
+        
+        fixed = self.fix_prompt(expansion)
+        fixed = [e for e in self.fix_prompt(lines=expansion)]
+        logger.debug(f"Expansion: {len(fixed)}")
+        prompt = '\n'.join(fixed)
+
+        return prompt
+
+    def expire_recent(self, turn_expiration : int = 4, **kwargs) -> None:
+        expire_threshold = self.turn_count - turn_expiration
+        self.recent = {k: v for k, v in self.recent.items() if v > expire_threshold}
+
+    def turn(self, turn : list[str], last : int = 1, turn_expriation : int = 4, **kwargs) -> List[str]:
+        self.turn_count += 1
+        self.expire_recent(turn_expriation, **kwargs)
+
+        expansion = self.shadow.expand(turn, low=False, high=False, **kwargs)
+        new_items = [e for e in expansion if e not in turn and e not in self.recent]
+
+        self.recent = {**{e: self.turn_count for e in new_items}, **self.recent}
+
+        fixed = [e for e in self.fix_prompt(lines=new_items + turn[-last:])]
+        logger.debug(f"Expansion: {len(fixed)}")
+        prompt = '\n'.join(fixed)
+        
+        return prompt
 
     @classmethod
     def from_config(cls, **kwargs) -> 'Charmer':
@@ -134,23 +188,34 @@ class Charmer:
             print(entry)
 
     @classmethod
+    def get_turn(cls, history : List[str], **kwargs) -> List[str]:
+        turn = []
+        for i in range(1,5):
+            if i > 1 and history[-i][0] == '>':
+                break
+            else:
+                turn.append(history[-i])
+        turn = turn[::-1]
+        return turn
+
+    @classmethod
     def run_charm(cls, r_length : int, r_temp : float, **kwargs):
         charmer = cls.from_config(**kwargs)
-        with CaptureFD() as co:
+        if not kwargs.get('verbose', False):
+            with CaptureFD() as co:
+                engine = FlowEngine.from_config(**kwargs)
+        else:
             engine = FlowEngine.from_config(**kwargs)
         print("Starting Game...")
-        #engine.clear_saved_context(**kwargs)
+        engine.clear_saved_context(**kwargs)
         history = cls.load_game_text()
         initial_q = "> New Game"
         initial_a = "Narrator: (informative) Welcome to Verana"
         if history is None:
             history = [initial_q, initial_a]
-        logger.debug(f"Loaded Game: {history}")
-        if True:
-            expanded = charmer(history, **kwargs)
-            engine.feed(prompt=expanded, reset=True, **kwargs)
-            #engine.save_context(**kwargs)
-            #logger.info("Game State Saved")
+        logger.debug(f"Loaded Game: {len(history)} history")
+        system = charmer.system(**kwargs)
+        engine.execute(system=system, prompt=charmer(history, **kwargs), restart=True, **kwargs)
         running = True
         cls.print_history(history, 10)
         refresh = 5
@@ -164,9 +229,9 @@ class Charmer:
             elif action == 'load':
                 print('Loading Game')
                 history = cls.load_game_text(**kwargs)
-                engine.feed(prompt=charmer(history, **kwargs), reset=True, **kwargs)
+                engine.execute(system=system, prompt=charmer(history, **kwargs), rebuild=True, **kwargs)
                 cls.print_history(history, 10)
-                refresh = 5
+                refresh = 8
                 print('Game Loaded')
                 continue
             elif action == 'save':
@@ -176,17 +241,12 @@ class Charmer:
                 continue
             elif action == 'last':
                 print('Last')
-                for i in range(-4, 0):
-                    if len(history) <= abs(i):
-                        break
-                    if history[i][0] == '>':
-                        print('')
-                    print(history[i])
+                turn = cls.get_turn(history=history, **kwargs)
+                print('\n'.join(turn))
                 continue
             elif action == 'expand':
-                engine.feed(prompt=charmer(history, **kwargs), reset=True, **kwargs)
-                refresh = 5
-                print("Expanded Context")
+                engine.execute(system=system, prompt=charmer(history, **kwargs), rebuild=True, **kwargs)
+                refresh = 8
                 continue
             elif action == 'pop':
                 while len(history[-1]) == 0 or history[-1][0] != '>':
@@ -203,11 +263,12 @@ class Charmer:
                 print(f"Retrying Last Entry: {player_input}")
             elif action == 'restart':
                 print('Are you sure? (y/N)')
-                quitting = input('> ')
-                if quitting == 'y':
+                idata = input('> ')
+                if idata == 'y':
                     print('Game Restarted')
                     history = [initial_q, initial_a]
-                    engine.feed(prompt=charmer(history, **kwargs), reset=True, **kwargs)
+                    system = charmer.system(**kwargs)
+                    engine.execute(system=system, prompt=charmer(history, **kwargs), restart=True, **kwargs)
                     cls.print_history(history, 10)
                     refresh = 5
                     continue
@@ -232,18 +293,18 @@ class Charmer:
             history.append(player_input)
             if refresh <= 0:
                 logger.info("Rebuilding Context")
-                engine.feed(prompt=charmer(history, **kwargs), reset=True, **kwargs)
+                engine.execute(system=system, prompt=charmer(history, **kwargs), rebuild=True, **kwargs)
                 refresh = 5
             else:
-                logger.debug("Feeding Input")
+                turn = cls.get_turn(history=history, **kwargs)
+                expanded_input = charmer.turn(turn, **kwargs)
                 refresh -= 1
-                engine.feed(prompt=f"{player_input}\n", **kwargs)
+                engine.execute(system=system, prompt=f"{expanded_input}\n", **kwargs)
             for _ in range(3):
                 result = engine.read(max_tokens=r_length, n_temp=r_temp, abort_tokens=['>'], stop_tokens=['\n'], sequence_tokens=[['\n','[']], **kwargs)
                 response = ''.join(result).strip()
                 if len(response) <= 1:
                     break
-                logger.debug(f"{result}")
                 print(f"{response}")
                 history.append(response)
 
