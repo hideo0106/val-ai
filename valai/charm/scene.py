@@ -181,7 +181,7 @@ class Scene(object):
 
     def set_location(self, session, location_name: str):
         """Sets the current location."""
-        self.location = self.db.get_location_by_name(session, location_name)
+        self.location = location_name
 
     def set_player(self, session, player_name: str):
         """Sets the player character."""

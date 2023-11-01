@@ -3,6 +3,7 @@
 from collections import defaultdict
 import json
 import logging
+import os
 import re
 from typing import List, Dict, Optional, Set, Tuple
 
@@ -331,7 +332,7 @@ class ContextShadowing:
         for back in range(0, len(turn)):
             line = turn[-back]
             for word in line.split():
-                symbols = self.state.keywords.get(word, set())
+                symbols = self.state.keywords.get(word.lower(), set())
                 matches.update(symbols)
 
         symbols = list(matches)
@@ -349,7 +350,7 @@ class ContextShadowing:
             line = history[-back]
             matches = set()
             for word in re.sub(r'[^a-zA-Z0-9 ]', '', line).split():
-                word_symbols = self.state.keywords.get(word, set())
+                word_symbols = self.state.keywords.get(word.lower(), set())
                 matches.update(word_symbols)
             new_matches = matches - matched
             if len(new_matches) > 0:
@@ -402,8 +403,9 @@ class ContextShadowing:
         return []
     
     @classmethod
-    def from_file(cls, **kwargs):
-        control = Symbolizer.from_file('scene/verana/characters.json')
+    def from_file(cls, scene_path : str, **kwargs):
+        filepath = os.path.join(scene_path, 'characters.json')
+        control = Symbolizer.from_file(filepath)
         state = control.compile()
         return cls(control, state)
 

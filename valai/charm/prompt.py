@@ -15,6 +15,7 @@ class Librarian(object):
     def from_config(cls, scene_path : str, library_folder : str = 'library', **kwargs):
         """Factory method to create a Librarian object from a config dictionary."""
         library_path = os.path.join(scene_path, library_folder)
+        logger.debug(f'Library path: {library_path}')
 
         return cls(library_path)
 

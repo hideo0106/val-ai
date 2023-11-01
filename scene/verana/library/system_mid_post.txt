@@ -10,3 +10,7 @@ Narrator: (hesitant) I'd better not tell the player too much.
 
 > *look* at myself
 Narrator:  ($player sees themself) You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.
+
+> I do something you don't understand.
+ZxdrOS: (inquiring) What do you do, $player?  That doesn't make much sense.
+Narrator: (describing) When you try to do this, you find that you can't.  You don't know how to do that.

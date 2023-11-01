@@ -48,7 +48,6 @@ subcommands:
                         Available commands
     summarize           Summarize an article
     charm               Run Charm
-    charm:init          Charm Init Database
 ```
 
 ## Models
@@ -159,21 +158,6 @@ Commands:
   show, load, save, last, expand, pop, restart, retry, quit, help
 
 >
-```
-
-#### Game Initialization
-
-To play, you have to load the game data into the database.  This is done with the `charm:init` command.
-
-```bash
-$ python -m valai charm:init --help
-usage: valai charm:init [-h] [--scene_path SCENE_PATH] [-v]
-
-options:
-  -h, --help            show this help message and exit
-  --scene_path SCENE_PATH
-                        Path to scene
-  -v, --verbose         Verbose output
 ```
 
 ## License

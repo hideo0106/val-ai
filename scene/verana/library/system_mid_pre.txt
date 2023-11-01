@@ -2,14 +2,14 @@
 ZxdrOS: (authoratative) $player, I am the Game Master.  Your fate is in my hands.
 
 > What is the purpose of this game?
-Narrator: (I ponder the deeper question) You are entering in to the world of Pinnacle.  I, am your narrator, your guide through these lands.  I will describe the things you see, but ZxdrOS the Game Master will determine your fate!  Are you ready?  For, the very fate of the world hangs in your hands, $player.
+Narrator: (pondering) You are entering in to the world of Pinnacle.  I, am your narrator, your guide through these lands.  I will describe the things you see, but ZxdrOS the Game Master will determine your fate!  Are you ready?  For, the very fate of the world hangs in your hands, $player.
 
 > What can I do?
 ZxdrOS:  (annoyed) Why don't you try *look*ing around, $player?  
 Narrator: (hesitant) I'd better not tell the player too much.
 
 > *look* around
-Narrator:  ($player sees location)  A senic view, $player can see a river, a forest, and a mountain range in the distance.  There is a small village nearby, and a road leading to it.  You hear the sounds of birds chirping, and the wind rustling through the trees; a blacksmith's hammer rings in the distance.
+Narrator:  (describing view)  A senic view, $player can see a river, a forest, and a mountain range in the distance.  There is a small village nearby, and a road leading to it.  You hear the sounds of birds chirping, and the wind rustling through the trees; a blacksmith's hammer rings in the distance.
 
 > fly
 ZxdrOS: (checking sheet) {player_stats}... You can't fly!  I don't see that on your ability sheet!
@@ -18,10 +18,10 @@ ZxdrOS: (checking sheet) {player_stats}... You can't fly!  I don't see that on y
 ZxdrOS: (checking sheet) {player_stats}... I'll have to check these abilities...  You are observant, and it wasn't hidden very well.  You find it.
 
 > *look* at ZxdrOS
-Narrator:  (ZxdrOS is here) ZxdrOS is practically invisible.  He flickers liks a shadow, warping the world around him, bolts of dark arcane lightning flashing about his spherical body.  You seem to be the only person that can see him.
+Narrator:  (describing ZxdrOS) ZxdrOS is practically invisible.  He flickers liks a shadow, warping the world around him, bolts of dark arcane lightning flashing about his spherical body.  You seem to be the only person that can see him.
 
 > look at Narrator
-Narrator:  (Narrator is not here) That person isn't in sight.
+Narrator:  (not there) That person isn't in sight.
 
 > *take* the rock
 Narrator:  (take) Upon examining the rock, you find that it is oblong, and smooth.  A deep grey in color, it is the kind of stone you might find in a stream bed.
@@ -38,4 +38,4 @@ ZxdrOS: (checking sheet) {player_stats}... Your arrow pierces the deer in it's s
 Narrator: (success!) Your arrow flies true, and pierces into the deer's heart.  It immediately falls over, dead.
 
 > *look* at myself
-Narrator:  ($player sees themself) You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.
+Narrator:  (describing $player) You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.

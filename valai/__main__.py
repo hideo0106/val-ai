@@ -9,7 +9,7 @@ VERSION = "0.1.1"
 DEFAULT_MODEL_PATH = 'local/models'
 DEFAULT_SCENE_PATH = 'scene/verana'
 DEFAULT_MODEL = 'zephyr-7b-beta.Q8_0.gguf'
-DEFAULT_GPU_LAYERS = 14
+DEFAULT_GPU_LAYERS = 10
 DEFAULT_BATCH_SIZE = 512
 DEFAULT_CONTEXT_SIZE = 2 ** 14
     
@@ -84,14 +84,9 @@ if __name__ == '__main__':
     charm_parser.add_argument('--ctx', type=int, default=DEFAULT_CONTEXT_SIZE, dest="n_ctx", help='LLAMA Context Size')
     charm_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
 
-    charm_load_parser = argparse.ArgumentParser(add_help=False)
-    charm_load_parser.add_argument('--scene_path', type=str, default=DEFAULT_SCENE_PATH, help='Path to scene')
-    charm_load_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
-
     # Add your original parser as a subparser
     summ_cmd = subparsers.add_parser('summarize', parents=[summary_parser], help='Summarize an article')
     summ_cmd = subparsers.add_parser('charm', parents=[charm_parser], help='Run Charm')
-    summ_cmd = subparsers.add_parser('charm:init', parents=[charm_load_parser], help='Charm Init Database')
 
     args = parser.parse_args()
     kwargs = dict(args._get_kwargs())

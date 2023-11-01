@@ -130,12 +130,14 @@ class FlowEngine:
         self.ctx : llama_cpp.llama_context_p = ctx
         self.n_ctx = n_ctx
         self.n_past = 0
+        self.n_system = 0
+        self.n_prev =  0
         self.last_n_size = 64
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens: list[llama_cpp.llama_token] = []
-        self.current_system : Optional[str] = None
-        self.n_system = 0
         self.system_tokens : List[llama_cpp.llama_token] = []
+        self.prev_tokens : List[llama_cpp.llama_token] = []
+        self.current_system : Optional[str] = None
     
     def load_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
         if not os.path.exists(save_file):
@@ -188,10 +190,13 @@ class FlowEngine:
     def reset(self, **kwargs):
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens = []
+        self.prev_tokens = []
         self.n_past = 0
+        self.n_prev = 0
 
     def execute(self, prompt : str, system : Optional[str] = None,
                 restart : bool = False, rebuild : bool = False,
+                retry : bool = False,
              **kwargs) -> int:
         """Execute the given prompt with the model"""
         send_system = False
@@ -223,6 +228,17 @@ class FlowEngine:
             self.n_past = self.n_system
             self.session_tokens = self.system_tokens.copy()
 
+        if retry:
+            rc = self.load_context(save_file="local/turn.context.dat", **kwargs)
+            if rc >= 0:
+                logger.info(f"Using previous turn context")
+                self.session_tokens = self.prev_tokens.copy()
+                self.n_past = self.n_prev
+
+        self.prev_tokens = self.session_tokens.copy()
+        self.n_prev = self.n_past
+        rc = self.save_context(save_file="local/turn.context.dat", **kwargs)
+
         rc = self.feed(prompt=prompt, **kwargs)
         return rc
 
@@ -251,7 +267,7 @@ class FlowEngine:
 
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
-        #logger.debug(prompt)
+        #logger.debug(f"```\n{prompt}\n```")
 
         if True:
             embd = []

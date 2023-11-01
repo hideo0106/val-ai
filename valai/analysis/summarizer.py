@@ -43,16 +43,16 @@ class ChainOfAnalysis:
         self.last_data = ''
         self.last_analysis = ''
 
-    def analyze(self, article : str, observations : int = 5, o_length : int = 512, o_temp : float = 0.7, **kwargs):
+    def analyze(self, article : str, subject : str = 'Article', observations : int = 5, o_length : int = 512, o_temp : float = 0.7, **kwargs):
         """Analyze the article and return the analysis"""
         prompt = f"""
 ### System: You are Val, my creative AI assistant.  You have a masters degree Journalism.  Your job is as my reporter, and we need to get all the facts!  You follow instructions and requests to be my heplful assistant.  Thanks so much for your help!
 ### Instruction: We are summarizing an article.  We will first *Analyze* the article, then develop a *Summary*, then determine *Missing Information*, and then *Resummarize*.  Follow each *Request* as it is provided.
-### *Article*:
-```article
+### *{subject}*:
+```{subject.lower()}
 {article}
 ```
-### *Request*: Given *Article*, analyze the purpose of this article, output the results as *Analysis*.  Our analysis is detailed and accurate, spanning all of the topics that are covered in the article.
+### *Request*: Given *{subject}*, analyze the purpose of this article, output the results as *Analysis*.  Our analysis is detailed and accurate, spanning all of the topics that are covered in the article.
 ### *Analysis* the most significant topics in the article are (with commentary):
 """
 
@@ -74,10 +74,10 @@ class ChainOfAnalysis:
         self.analysis = ''.join(generated)
         return ''.join(generated)
 
-    def summarize(self, paragraphs : int = 2, s_length : int = 512, s_temp : float = 0.2, **kwargs) -> list[str]:
+    def summarize(self, subject : str = 'Article', paragraphs : int = 2, s_length : int = 512, s_temp : float = 0.2, **kwargs) -> list[str]:
         """Summarize the article and return the summary"""
         prompt = f"""```
-### *Request*: Given *Article* and *Analysis*, output *Summary* which contains a summary of *Article*.  Our summary is detailed, erudite, succinty, and accurate.
+### *Request*: Given *{subject}* and *Analysis*, output *Summary* which contains a summary of *{subject}*.  Our summary is detailed, erudite, succinty, and accurate.
 ### *Summary* (erudite and informative; {paragraphs} paragraphs):
 ```summary"""
 
@@ -92,7 +92,7 @@ class ChainOfAnalysis:
             generated.append(''.join(information))
         return generated
 
-    def improve(self, theories : int = 5, t_length : int = 512, t_temp : float = 1.0, **kwargs):
+    def improve(self, subject : str = 'Article', theories : int = 5, t_length : int = 512, t_temp : float = 1.0, **kwargs):
         """Improve the summary by identifying missing information"""
         prompt = "```\n"
         if self.iteration == 0:
@@ -103,7 +103,7 @@ class ChainOfAnalysis:
 - Information #: Observantly, I should change a part of the summary from this one to something that would improve the summary.
 """
 
-        prompt += f"""### *Request*: Given the *Article*, as an expert and a professional, determine missing information from the *Summary*, output the results as *Missing Information* using the specified *Information Format*.
+        prompt += f"""### *Request*: Given the *{subject}*, as an expert and a professional, determine missing information from the *Summary*, output the results as *Missing Information* using the specified *Information Format*.
 ### *Missing Information* ({theories} entries, novel information not contained in the summary):
 """
 
@@ -127,7 +127,7 @@ class ChainOfAnalysis:
             self.information_idx += 1
         return ''.join(generated)
 
-    def resummarize(self, paragraphs : int = 2, s_length : int = 512, s_temp : float = 0.2, **kwargs) -> list[str]:
+    def resummarize(self, subject : str = 'Article', paragraphs : int = 2, s_length : int = 512, s_temp : float = 0.2, **kwargs) -> list[str]:
         """Resummarize the article and return the summary"""
         prompt = f"""
 
@@ -152,18 +152,18 @@ class ChainOfAnalysis:
             generated.append(''.join(information))
         return generated
 
-    def reset_context(self, summary : list[str], **kwargs):
+    def reset_context(self, summary : list[str], subject : str = 'Article', **kwargs):
         """Reset the context of the summarizer, using the last summary as the new context"""
         self.iteration = 0
         self.information_idx = 1
         prompt = f"""
 ### System: You are Val, my creative AI assistant.  You have a masters degree in English, and are an expert researcher.  You are my copy editor, and your job is to fix our errors and any missing periods.  You follow instructions and requests to be my heplful assistant.  Thanks so much for your help!
 ### Instruction: We are summarizing an article.  We will first develop a *Summary*, then *Missing Information*, and then *Resummarize*.  Follow each *Request* as it is provided.
-### *Article*:
-```article
+### *{subject}*:
+```{subject.lower()}
 {self.last_data}
 ```
-### *Request*: Given *Article*, output *Summary 0* which contains a summary of *Article*.  Our summary is detailed, erudite, succinty, and accurate; Our summary is one, two, or three paragraphs.
+### *Request*: Given *{subject}*, output *Summary 0* which contains a summary of *{subject}*.  Our summary is detailed, erudite, succinty, and accurate; Our summary is one, two, or three paragraphs.
 ### *Format* paragraph score results:
 ### Paragraph Score #: paragraph ended abruptly - MEDIUM
 ### Paragraph Score #: paragraph is incorrect - LOW
@@ -180,7 +180,7 @@ class ChainOfAnalysis:
                 self.engine.feed(prompt=summary_prompt, **kwargs)
                 self.engine.read(max_tokens=15, stop_tokens=['\n'], abort_tokens=['`'], n_temp=1.2, **kwargs)
     
-    def __call__(self, data, iterations : int = 3, constrain_data : int = 10000, **kwargs):
+    def __call__(self, data, iterations : int = 3, constrain_data : int = 10000,**kwargs):
         """Summarize an article and return the summary"""
         logger.info("Chain of Analysis Agent invoked")
         self.iteration = 0
