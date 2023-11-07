@@ -4,10 +4,16 @@ from ctypes import c_float, c_size_t, c_void_p, c_char, c_int, c_uint8, c_int8, 
 import logging
 import os
 import multiprocessing
-from typing import List, Optional
+from typing import Any, List, Optional
 import llama_cpp
 
 logger = logging.getLogger(__name__)
+
+class EngineException(Exception):
+    """An exception for errors in the FlowEngine class"""
+    def __init__(self, message, tokens):
+        super().__init__(message)
+        self.tokens = tokens
 
 """
 void llama_batch_clear(struct llama_batch & batch) {
@@ -187,26 +193,52 @@ class FlowEngine:
             return 0
         return 1
 
+    def token_clearance(self, new_tokens : int = 0, padding : int = 0, **kwargs) -> int:
+        """Get the number of tokens remaining"""
+        result = self.n_ctx - self.n_past - new_tokens - padding
+        logger.info(f"Token Clearance: {self.n_ctx} - {self.n_past} - {new_tokens} - {padding} = {result}")
+        return result
+
     def reset(self, **kwargs):
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens = []
         self.prev_tokens = []
+        self.system_tokens = []
         self.n_past = 0
         self.n_prev = 0
+        self.current_system = None
 
-    def execute(self, prompt : str, system : Optional[str] = None,
-                restart : bool = False, rebuild : bool = False,
-                retry : bool = False,
-             **kwargs) -> int:
+    def execute(self, prompt : str, retry : bool = False, **kwargs) -> int:
         """Execute the given prompt with the model"""
-        send_system = False
-        send_prompt = True
 
-        if system is not None and system != self.current_system or restart:
-            send_system = True
+        self.prev_tokens = self.session_tokens.copy()
+        self.n_prev = self.n_past
+        rc = self.save_context(save_file="local/turn.context.dat", **kwargs)
+
+        rc = self.feed(prompt=prompt, **kwargs)
+        return rc
+
+    def reload_turn(self, **kwargs) -> int:
+        """Reset our turn data"""
+        rc = self.load_context(save_file="local/turn.context.dat", **kwargs)
+        if rc >= 0:
+            logger.info(f"Using previous turn context")
+            self.session_tokens = self.prev_tokens.copy()
+            self.n_past = self.n_prev
+        return rc
+
+    def prepare(self, system : str, restart : bool = True, **kwargs) -> int:
+        """Execute the given system prompt"""
+
+        if system != self.current_system or restart:
+            if self.current_system != system:
+                restart = True
             self.current_system = system
-        
-        if send_system and self.current_system is not None:
+
+        if self.current_system is None:
+            logger.error("No system prompt given")
+            return -1
+        if restart:
             self.reset()
             rc = self.feed(prompt=self.current_system, **kwargs)
             if rc < 0:
@@ -218,8 +250,7 @@ class FlowEngine:
             if rc < 0:
                 logger.error("Failed to save our context")
                 return rc
-
-        if rebuild:
+        else:
             # Load our saved system
             rc = self.load_context(**kwargs)
             if rc < 0:
@@ -228,22 +259,15 @@ class FlowEngine:
             self.n_past = self.n_system
             self.session_tokens = self.system_tokens.copy()
 
-        if retry:
-            rc = self.load_context(save_file="local/turn.context.dat", **kwargs)
-            if rc >= 0:
-                logger.info(f"Using previous turn context")
-                self.session_tokens = self.prev_tokens.copy()
-                self.n_past = self.n_prev
-
         self.prev_tokens = self.session_tokens.copy()
         self.n_prev = self.n_past
-        rc = self.save_context(save_file="local/turn.context.dat", **kwargs)
-
-        rc = self.feed(prompt=prompt, **kwargs)
         return rc
 
     def feed(self, prompt : str, n_batch : int, n_ctx : int, **kwargs) -> int:
         """Feed the given prompt to the model"""
+        if prompt is None:
+            logger.warning(f"Feeding empty prompt")
+            return -1
         kwargs['n_ctx'] = n_ctx
         b_prompt = prompt.encode('ascii', 'ignore')
         b_prompt = b" " + b_prompt
@@ -257,9 +281,13 @@ class FlowEngine:
 
         embd_inp = embd_inp[:n_of_tok]
 
+        clearance = self.token_clearance(n_of_tok, 100)
+        if clearance < 0:
+            raise EngineException("Too many tokens in prompt", clearance)
+
         # This is a hack to make sure we don't overrun our buffer
-        # Lets create an offset that clips to the last n_ctx - 500 tokens
-        n_ctx_floor = n_ctx - 500
+        # Lets create an offset that clips to the last n_ctx - 100 tokens
+        n_ctx_floor = n_ctx - 100
         n_ctx_floor = n_ctx_floor if n_of_tok > n_ctx_floor else n_of_tok
         embd_inp = embd_inp[-n_ctx_floor:]
 
@@ -267,7 +295,7 @@ class FlowEngine:
 
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
-        #logger.debug(f"```\n{prompt}\n```")
+        logger.debug(f"```{prompt}```")
 
         if True:
             embd = []
@@ -337,7 +365,7 @@ class FlowEngine:
               sequence_tokens : list = [], log_chunk_length : int = 25, n_temp: float = 0.7,
               mirostat: int = 0, mirostat_tau : float = 0, mirostat_eta : float = 0, top_k: int = 40,
               n_tfs_z: float = 0.0, n_typical_p: float = 0.0, n_top_p: float = 0.0,
-                **kwargs):
+                **kwargs) -> Optional[List[Any]]:
         """Read from the model until the given number of tokens is reached"""
         remaining_tokens = max_tokens
         last_n_repeat = 64
@@ -406,7 +434,13 @@ class FlowEngine:
                     logger.debug(f"Break ({len(log_chunks)}): Aborting on {piece} ({id})")
                     running = False
                     # TODO Do I need to inject a newline in-context here?
-                    id = 13
+                    id = None
+                    return None
+                elif id == 2 and n_generated == 0:
+                    # 2 is '', repeating, this is bad model output.
+                    running = False
+                    id = None
+                    return None
                 elif (last_piece, piece) in sequence_set:
                     logger.debug(f"Break ({len(log_chunks)}): sequence {last_piece}, {piece} ({id})")
                     running = False
@@ -446,6 +480,7 @@ class FlowEngine:
 
                 if len(log_chunks) > 0 and (not running or len(log_chunks) % log_chunk_length == 0):
                     logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
+                    logger.debug(f"Tokens ({n_generated}): {log_chunks}")
                     log_chunks = []
 
                 if not running:

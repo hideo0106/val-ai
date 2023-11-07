@@ -1,5 +1,5 @@
 from .analysis.summarizer import ChainOfAnalysis
-from .charming import Charmer
+from .charming import run_charm
 from .charm.loader import load as run_charm_load
 from .scrape import fetch_url
 from .ioutil import CaptureFD
@@ -75,7 +75,8 @@ if __name__ == '__main__':
     charm_parser = argparse.ArgumentParser(add_help=False)
     charm_parser.add_argument('--model-path', type=str, dest="model_path", default=DEFAULT_MODEL_PATH, help='Path to model')
     charm_parser.add_argument('--model-file', type=str, dest="model_file", default=DEFAULT_MODEL, help='Model file (gguf)')
-    charm_parser.add_argument('--scene-path', type=str, dest="scene_path", default=DEFAULT_SCENE_PATH, help='Path to scene')
+    charm_parser.add_argument('--guidance', type=str, dest="model_guidance", default='dialog', help='Guidance strategy')
+    charm_parser.add_argument('--scene', type=str, dest="scene_path", default=DEFAULT_SCENE_PATH, help='Path to scene')
     charm_parser.add_argument('--rl', '--length', type=int, default=250, dest='r_length', help='Max number of tokens in a game response')
     charm_parser.add_argument('--rt', '--temperature', type=float, default=0.7, dest="r_temp", help='Response generation temperature')
     charm_parser.add_argument('--constrain', type=int, default=12000, dest="constrain_data", help='Constrain the history to this many bytes')
@@ -101,6 +102,6 @@ if __name__ == '__main__':
 
     {
         'summarize': lambda: run_summarize(**kwargs),
-        'charm': lambda: Charmer.run_charm(**kwargs),
+        'charm': lambda: run_charm(**kwargs),
         'charm:init': lambda: run_charm_load(**kwargs),
     }.get(kwargs.get('command', None), default)()

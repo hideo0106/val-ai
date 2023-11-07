@@ -314,9 +314,10 @@ class Symbolizer:
 class ContextShadowing:
     """A class to represent the context shadowing algorithm."""
 
-    def __init__(self, control: Symbolizer, state: SymbolState):
+    def __init__(self, control: Symbolizer, state: SymbolState, scene_path: str):
         self.control = control
         self.state = state
+        self.scene_path = scene_path
         self.high = self.control.broaden(self.state.symbols, recurse=3, mode='maximal')
         self.low = self.control.broaden(self.state.symbols, recurse=3, mode='minimal')
 
@@ -391,23 +392,46 @@ class ContextShadowing:
                     scan[forward].update(new_matches)
                     matched.update(new_matches)
             
+        turns = []
+        symbols = []
+        player = None
+
         for output in range(len(history)):
             line = history[output]
             data = scan[output]
+            # The order of a turn is:
+            # 1. Symbols that need to be in the history
+            # 3. The player's input
+            # 4. Any other system output
             if len(data) > 0:
                 for item in data:
                     if item in self.state.values:
-                        yield f"[{item} - {self.state.values[item]}]"
-            yield line
+                        symbols.append(f"[{item} - {self.state.values[item]}]")
+            if line.startswith('['):
+                symbols.append(line)
+            elif line.startswith('>'):
+                for item in symbols:
+                    yield item
+                symbols = []
+                for turn in turns:
+                    yield turn
+                turns = [line]
+            else:
+                turns.append(line)
 
         return []
+
+    def reload(self, **kwargs):
+        filepath = os.path.join(self.scene_path, 'characters.json')
+        self.control = Symbolizer.from_file(filepath)
+        self.state = self.control.compile()
     
     @classmethod
     def from_file(cls, scene_path : str, **kwargs):
         filepath = os.path.join(scene_path, 'characters.json')
         control = Symbolizer.from_file(filepath)
         state = control.compile()
-        return cls(control, state)
+        return cls(control, state, scene_path)
 
 if __name__ == '__main__':
 

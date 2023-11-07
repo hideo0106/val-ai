@@ -40,6 +40,7 @@
             "value": "The great country of Harboria, spanning the region in the valley.  The capitol of J'Dhang is known far and wide."
         },
         "^location_verana^": {
+            "keywords": ["verana", "here"],
             "value": "Verana is a small but ancient village in Harboria, far from the capitol.  It is thought of as the backwaters of the kingdom, but is known for fine wood and legends of magic.  It has a poor economy.  The village is in a hollow, with mountains on one side and dark woods on the other."
         },
         "^location_woods": {
@@ -53,7 +54,7 @@
             "value": "The well has clear, cool water, but looks deep.  It is the primary source of water for everyone in Verana."
         },
         "%woods%": {
-            "keywords": ["forest", "woods"],
+            "keywords": ["forest", "woods", "here"],
             "value": "The dark and scary woods located on the outskirts of Verana."
         },
         "+peblos+": {
@@ -76,7 +77,7 @@
             "value": "Peblos is very happy, $player has found his missing goat that was lost in the woods."
         },
         "+mirela+": {
-            "keywords": ["mirela", "innkeeper"],
+            "keywords": ["mirela", "innkeeper", "inn"],
             "value": "Mirela is the innkeeper of Verana."
         },
         "%mirela_woods%": {
@@ -105,7 +106,7 @@
             "value": "Lydia is Mirela's daughter.  It's hard being a single parent, but they get by just fine."
         },
         "+lydia+": {
-            "keywords": ["lydia"],
+            "keywords": ["lydia", "inn"],
             "related_symbols": ["%mirela_inn%"],
             "value": "Lydia is Mirela's daughter.  Lydia is the only girl in town. She serves drinks at the Inn."
         },
@@ -150,6 +151,15 @@
             "keywords": ["woods", "forest"],
             "related_symbols": ["%woods%"],
             "value": "Cedric sees the woods as a necessary evil - home to the pests that threaten his crops, but also the source of firewood and game."
+        },
+        "+thomas+": {
+            "keywords": ["thomas", "woodsman", "lumberjack", "guide"],
+            "value": "Thomas is the woodsman and lumberjack of Verana."
+        },
+        "%thomas_woods%": {
+            "keywords": ["woods", "forest"],
+            "related_symbols": ["%woods%"],
+            "value": "Thomas is a skilled hunter and tracker, and knows the woods like the back of his hand."
         }
     },
     "characters": [
