@@ -1,16 +1,13 @@
-# valai/charmer.py
+# valai/charm/charmer.py
 
 from collections import defaultdict
 import logging
 import os
-import random
 from typing import List, Optional
 
-from .flatdata import ContextShadowing
+from .shadow import ContextShadowing
 from .prompt import Librarian
-from .scene import Scene
 from .guidance import GuidanceStrategy
-from ..ioutil import CaptureFD
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +17,6 @@ class Charmer:
     managing the game state, and the interaction between the player and the system.
     """
     def __init__(self, library : Librarian, shadow : ContextShadowing, guidance : GuidanceStrategy, history_threshold : int = 100) -> None:
-        #self.db = db
-        #self.scene = scene
-        #self.charm = charm
         self.library = library
         self.shadow = shadow
         self.turn_count = 0

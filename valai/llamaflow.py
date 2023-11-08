@@ -4,7 +4,7 @@ from ctypes import c_float, c_size_t, c_void_p, c_char, c_int, c_uint8, c_int8, 
 import logging
 import os
 import multiprocessing
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 import llama_cpp
 
 logger = logging.getLogger(__name__)
@@ -136,13 +136,15 @@ class FlowEngine:
         self.ctx : llama_cpp.llama_context_p = ctx
         self.n_ctx = n_ctx
         self.n_past = 0
-        self.n_system = 0
         self.n_prev =  0
         self.last_n_size = 64
         self.last_n_tokens_data = [0] * self.last_n_size
-        self.session_tokens: list[llama_cpp.llama_token] = []
+        self.session_tokens: List[llama_cpp.llama_token] = []
         self.system_tokens : List[llama_cpp.llama_token] = []
         self.prev_tokens : List[llama_cpp.llama_token] = []
+        self.systems : Dict[str, str] = {}
+        self.n_system : Dict[str, int] = {}
+        self.system_tokens : Dict[str, List[llama_cpp.llama_token]] = {}
         self.current_system : Optional[str] = None
     
     def load_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
@@ -203,9 +205,11 @@ class FlowEngine:
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens = []
         self.prev_tokens = []
-        self.system_tokens = []
         self.n_past = 0
         self.n_prev = 0
+        self.systems = {}
+        self.n_system = {}
+        self.system_tokens = {}
         self.current_system = None
 
     def execute(self, prompt : str, retry : bool = False, **kwargs) -> int:
@@ -227,25 +231,31 @@ class FlowEngine:
             self.n_past = self.n_prev
         return rc
 
-    def prepare(self, system : str, restart : bool = True, **kwargs) -> int:
-        """Execute the given system prompt"""
+    def set_context(self, system_context : str, prompt : str, **kwargs) -> int:
+        self.systems[system_context] = prompt
 
-        if system != self.current_system or restart:
-            if self.current_system != system:
-                restart = True
-            self.current_system = system
+    def prepare(self, system_context : str, restart : bool = True, **kwargs) -> int:
+        """
+        Execute the given system prompt
+        system: The system prompt to execute.  If the system has changed, we will reset the model
+        restart: If true, we will reset the model and start from the beginning
+        """
 
-        if self.current_system is None:
-            logger.error("No system prompt given")
+        if system_context not in self.systems:
+            logger.error(f"System {system_context} not found")
             return -1
+
+        system = self.systems[system_context]
+
         if restart:
             self.reset()
-            rc = self.feed(prompt=self.current_system, **kwargs)
-            if rc < 0:
-                logger.error("Failed to feed system prompt")
-                return rc
-            self.n_system = self.n_past
-            self.system_tokens = self.session_tokens.copy()
+            if len(system) > 0:
+                rc = self.feed(prompt=system, **kwargs)
+                if rc < 0:
+                    logger.error("Failed to feed system prompt")
+                    return rc
+                self.n_system[system_context] = self.n_past
+                self.system_tokens[system_context] = self.session_tokens.copy()
             rc = self.save_context(**kwargs)
             if rc < 0:
                 logger.error("Failed to save our context")
@@ -256,11 +266,12 @@ class FlowEngine:
             if rc < 0:
                 logger.error("Failed to load our context")
                 return rc
-            self.n_past = self.n_system
-            self.session_tokens = self.system_tokens.copy()
+            self.n_past = self.n_system.get(system_context, 0)
+            self.session_tokens = self.system_tokens.get(system_context, []).copy()
 
         self.prev_tokens = self.session_tokens.copy()
         self.n_prev = self.n_past
+        self.current_system = system_context
         return rc
 
     def feed(self, prompt : str, n_batch : int, n_ctx : int, **kwargs) -> int:

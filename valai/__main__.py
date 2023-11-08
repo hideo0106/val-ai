@@ -1,6 +1,5 @@
 from .analysis.summarizer import ChainOfAnalysis
-from .charming import run_charm
-from .charm.loader import load as run_charm_load
+from .charming.wizard import run_charm
 from .scrape import fetch_url
 from .ioutil import CaptureFD
 

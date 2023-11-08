@@ -58,6 +58,7 @@ def generate_tokens(history : List[str], offset : int = 0, **kwargs) -> List[Tup
         
     return []
 
+
 class TokenFeatures:
     """TokenFeatures tokenizes our history"""
     def __init__(self, history : List[str], tokens : Tuple[int, str, str, str, str, str], 

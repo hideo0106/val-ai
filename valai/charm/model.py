@@ -1,11 +1,11 @@
-# valai/charm/flatdata.py
+# valai/charm/model.py
 
 from collections import defaultdict
 import json
 import logging
 import os
 import re
-from typing import List, Dict, Optional, Set, Tuple
+from typing import List, Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -435,7 +435,7 @@ class ContextShadowing:
 
 if __name__ == '__main__':
 
-    from ..charming import Charmer
+    from ..charming.wizard import Charmer
 
     logging.basicConfig(level=logging.DEBUG)
     shadow = ContextShadowing.from_file()

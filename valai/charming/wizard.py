@@ -1,17 +1,18 @@
-# valai/charming.py
+# valai/charming/wizard.py
 
 import logging
 import os
 import random
 from typing import Optional
 
-from .analysis.summarizer import ChainOfAnalysis
-from .ioutil import CaptureFD
-from .llamaflow import FlowEngine, EngineException
-from .charm.charmer import Charmer
-from .charm.token import TokenFeatures, tokenize_history
+from ..analysis.summarizer import ChainOfAnalysis
+from ..ioutil import CaptureFD
+from ..llamaflow import FlowEngine, EngineException
+from ..charm.charmer import Charmer
+from ..charm.token import TokenFeatures
 
 logger = logging.getLogger(__name__)
+
 
 # The charm library was a project I was working on to create a text-based adventure game, and provides an early
 # implementation of the context shadowing concept.
@@ -24,7 +25,8 @@ class CharmWizard:
 
     def reset_engine(self, restart : bool = False, **kwargs) -> bool:
         try:
-            self.engine.prepare(system=self.current_system, restart=restart, **kwargs)
+            self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
+            self.engine.prepare(system_context='system', restart=restart, **kwargs)
             self.engine.execute(prompt=self.charmer(**kwargs), **kwargs)
             return True
         except EngineException as e:
@@ -341,7 +343,7 @@ class CharmWizard:
                     refresh += 1
                 if refresh <= 0:
                     logger.info("Rebuilding Context")
-                    self.engine.prepare(system=self.current_system, restart=False, **kwargs)
+                    self.engine.prepare(system_context='system', restart=False, **kwargs)
                     self.engine.execute(prompt=f"{self.charmer(**kwargs)}\n{additional}", **kwargs)
                     refresh = refresh_threshold
                 else:
@@ -409,7 +411,7 @@ def run_charm(**kwargs):
     app.run_charm(**kwargs)
 
 if __name__ == "__main__":
-    from .llamaflow import FlowEngine
+    from ..llamaflow import FlowEngine
 
     logging.basicConfig(level=logging.DEBUG)
 
