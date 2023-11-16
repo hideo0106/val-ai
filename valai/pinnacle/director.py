@@ -220,7 +220,8 @@ class SceneDirector:
         exit = self.scene.exit_for_keyword(target)
         if exit is None:
             raise DirectorError(f"Location {target} not found.")
-        player_input = f"""{self.roster.player_name} (to ZxdrOS, travel): I travel to {exit.name}."""
+        # TODO add the ability to mark a location as visited
+        player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {self.scene.location.name} and I travel to {exit.name}.  What do I see?"""
         self.add_residue(exit.travel_line(self.roster.player.sheet))
         self.narration = True
         return player_input

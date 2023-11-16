@@ -140,14 +140,12 @@ class FlowEngine:
         self.last_n_size = 64
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens: List[llama_cpp.llama_token] = []
-        self.system_tokens : List[llama_cpp.llama_token] = []
-        self.prev_tokens : List[llama_cpp.llama_token] = []
         self.systems : Dict[str, str] = {}
         self.n_system : Dict[str, int] = {}
         self.system_tokens : Dict[str, List[llama_cpp.llama_token]] = {}
         self.current_system : Optional[str] = None
     
-    def load_context(self, save_file : str = 'local/game.context.dat', **kwargs) -> int:
+    def load_context(self, save_file : str, **kwargs) -> int:
         if not os.path.exists(save_file):
             logger.info(f"Error: {save_file} does not exist")
             return -1
@@ -159,12 +157,11 @@ class FlowEngine:
 
         with open(save_file, "rb") as fp_read:
             bytes_read = fp_read.readinto(state_mem)
-            logger.info(f"Context: Read {bytes_read} {state_size} bytes from {save_file}")
+            logger.debug(f"Context: Read {bytes_read} {state_size} bytes from {save_file}")
             if bytes_read != state_size:
                 logger.error("Error: failed to read state")
                 return -1
 
-        logger.debug(f"Context: Setting state data")
         rc = llama_cpp.llama_set_state_data(self.ctx, state_mem)
 
         return rc
@@ -201,38 +198,48 @@ class FlowEngine:
         logger.debug(f"Token Clearance: {self.n_ctx} - {self.n_past} - {new_tokens} - {padding} = {result}")
         return result
 
-    def reset(self, **kwargs):
+    def reset(self, system : bool = True, **kwargs):
         self.last_n_tokens_data = [0] * self.last_n_size
         self.session_tokens = []
         self.prev_tokens = []
         self.n_past = 0
         self.n_prev = 0
-        self.systems = {}
-        self.n_system = {}
-        self.system_tokens = {}
-        self.current_system = None
+        if system:
+            self.n_system = {}
+            self.system_tokens = {}
+            self.systems = {}
+            self.current_system = None
+        
+    def set_checkpoint(self, checkpoint : str, **kwargs) -> bool:
+        """Set a checkpoint for the current state"""
+        return self.save_context(save_file=f"local/{checkpoint}.context.dat", **kwargs)
 
-    def execute(self, prompt : str, retry : bool = False, **kwargs) -> int:
+    def execute(self, prompt : str, retry : bool = False, checkpoint : Optional[str] = None, **kwargs) -> int:
         """Execute the given prompt with the model"""
 
         self.prev_tokens = self.session_tokens.copy()
         self.n_prev = self.n_past
-        rc = self.save_context(save_file="local/turn.context.dat", **kwargs)
+        if checkpoint is not None:
+            self.set_checkpoint(checkpoint=checkpoint, **kwargs)
 
         rc = self.feed(prompt=prompt, **kwargs)
         return rc
 
-    def reload_turn(self, **kwargs) -> int:
+    def reload_turn(self, checkpoint : str = 'turn', **kwargs) -> int:
         """Reset our turn data"""
-        rc = self.load_context(save_file="local/turn.context.dat", **kwargs)
+        rc = self.load_context(save_file=f"local/{checkpoint}.context.dat", **kwargs)
         if rc >= 0:
-            logger.info(f"Using previous turn context")
-            self.session_tokens = self.prev_tokens.copy()
-            self.n_past = self.n_prev
+            logger.info(f"Using previous {checkpoint} context")
+            self.session_tokens = self.system_tokens.get(checkpoint, []).copy()
+            self.n_past = self.n_system.get(checkpoint, 0)
+
+            self.prev_tokens = self.session_tokens.copy()
+            self.n_prev = self.n_past
         return rc
 
     def set_context(self, system_context : str, prompt : str, **kwargs) -> int:
         self.systems[system_context] = prompt
+        logger.debug(f"Set system {system_context}")
 
     def prepare(self, system_context : str, restart : bool = True, **kwargs) -> int:
         """
@@ -241,14 +248,16 @@ class FlowEngine:
         restart: If true, we will reset the model and start from the beginning
         """
 
+        logger.debug(f"Preparing system {system_context}")
+
         if system_context not in self.systems:
-            logger.error(f"System {system_context} not found")
+            logger.error(f"System {system_context} not found: {','.join(self.systems.keys())}")
             return -1
 
         system = self.systems[system_context]
 
         if restart:
-            self.reset()
+            self.reset(system=False, **kwargs)
             if len(system) > 0:
                 rc = self.feed(prompt=system, **kwargs)
                 if rc < 0:
@@ -262,7 +271,7 @@ class FlowEngine:
                 return rc
         else:
             # Load our saved system
-            rc = self.load_context(**kwargs)
+            rc = self.load_context(save_file=f"local/game.context.dat", **kwargs)
             if rc < 0:
                 logger.error("Failed to load our context")
                 return rc
@@ -306,7 +315,7 @@ class FlowEngine:
 
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
-        #logger.debug(f"```{prompt}```")
+        logger.debug(f"```{prompt}```")
 
         if True:
             embd = []

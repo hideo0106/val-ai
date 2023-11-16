@@ -204,9 +204,11 @@ class DirectorCharmer:
                     break
         return location_symbol
 
-    def __call__(self, processing : Optional[List[str]] = None, **kwargs) -> List[str]:
-        self.turn_count += 1
-        idp = True
+    def __call__(self, processing : Optional[List[str]] = None, idp : bool = False, tick : bool = True, **kwargs) -> List[str]:
+        if tick: 
+            # TODO I guess we should count the turns here
+            self.turn_count = 1
+
         if processing is None:
             processing = self.current_history
             idp = True
@@ -214,12 +216,49 @@ class DirectorCharmer:
         expansion = self.shadow.expand(processing, **kwargs)
         expansion = [e for e in expansion]
         #logger.debug(f"Expanding {processing} to {expansion}")
-        new_items = [e for e in expansion if e not in processing]
         
         if idp:
-            self.recent = {e: self.turn_count for e in new_items}
+            self.recent = {e: self.turn_count for e in expansion if e not in processing}
         
         return self.guidance.format_turn(turn=expansion)
+
+    def uncharmed(self, hold : int = 3, take : int = 1, **kwargs) -> List[str]:
+        ptr = len(self.current_history) - 1
+        if hold > 0:
+            hix = hold
+        elif take > 0:
+            hix = take
+
+        while ptr > 0 and hix > 0:
+            if self.current_history[ptr][0] == '$':
+                hix -= 1
+            ptr -= 1
+
+        if hold > 0:
+            history = self.current_history[0:ptr]
+        else:
+            history = self.current_history[ptr:]
+
+        return self.guidance.format_turn(turn=history)
+
+    def replay(self, hold : int = -1, take : int = 3, **kwargs) -> List[str]:
+        ptr = len(self.current_history) - 1
+        if hold > 0:
+            hix = hold
+        elif take > 0:
+            hix = take
+
+        while ptr > 0 and hix > 0:
+            if self.current_history[ptr][0] == '$':
+                hix -= 1
+            ptr -= 1
+
+        if hold > 0:
+            history = self.current_history[0:ptr]
+        else:
+            history = self.current_history[ptr:]
+            
+        return self(processing=history, tick = False, idp=True, **kwargs)
 
     def expire_recent(self, turn_expiration : int = 4, **kwargs) -> None:
         expire_threshold = self.turn_count - turn_expiration

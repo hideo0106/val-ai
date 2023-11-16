@@ -24,13 +24,27 @@ class DirectorWizard:
         self.current_system = None
         self.command_chain = []
 
-    def reset_engine(self, restart : bool = False, **kwargs) -> bool:
+    def reset_engine(self, restart : bool = False, level : str = 'game', **kwargs) -> bool:
         try:
-            self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
-            self.engine.prepare(system_context='system', restart=restart, **kwargs)
-            prompt = self.charmer.scene_header(**kwargs)
-            prompt += self.charmer(**kwargs)
-            self.engine.execute(prompt=prompt, **kwargs)
+            logger.debug(f"Resetting Engine (Restart: {restart}, system: {level})")
+            if level == 'game':
+                self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
+                self.engine.prepare(system_context='system', restart=restart, **kwargs)
+                prompt = "### Input (new scene):"
+                prompt += self.charmer.scene_header(output_end=False, **kwargs)
+                prompt += "\n### Response (dialog, endless):\n"        
+                # TODO discover the actual scene boundary in the history, and potentally feed history
+                # into the engine differently; potentially unexpanded, and before the scene definition.
+                # The scene header could potentially be injected into the stream in some more
+                # elegant way as well.
+                logger.debug(f"Sending prompt: {len(prompt)}")
+                self.engine.execute(prompt=prompt, checkpoint=None, **kwargs)
+                self.engine.set_checkpoint('scene', **kwargs)
+            elif level == 'scene':
+                self.engine.reload_turn(checkpoint='scene', **kwargs)
+
+            prompt = self.charmer(**kwargs)
+            self.engine.execute(prompt=prompt, checkpoint='turn', **kwargs)
             return True
         except EngineException as e:
             logging.error(f"Engine Exception: {e}")
@@ -59,16 +73,18 @@ class DirectorWizard:
             self.charmer.shadow.reload(location_symbol=location_symbol, party=self.charmer.director.roster.party, **kwargs)
         self.charmer.set_scene(location_symbol, quiet=True, **kwargs)
         system = self.charmer.system_header(**kwargs)
-        self.current_system = system
+        if system is not None:
+            self.current_system = system
 
         if restart:
             self.engine.clear_saved_context(**kwargs)
-        self.reset_engine(restart=restart, **kwargs)
+        self.reset_engine(restart=restart, level='game', **kwargs)
 
         return True
 
     def execute_chapter(self, **kwargs) -> bool:
-        self.engine.reset()
+        # TODO highly experimental
+        self.engine.reset(**kwargs)
         cod = ChainOfAnalysis(engine=self.engine)
         result = cod(data='\n'.join(self.charmer.current_history), subject="Dialog", iterations=2, observations=7, paragraphs=2, theories=5, **kwargs)
         result = f"Codex: ```{result}```"
@@ -84,21 +100,6 @@ class DirectorWizard:
             print(f"{c}")
 
         return True
-
-    def execute_load(self, **kwargs) -> bool:
-        self.init(restart = False, load_history=True, load_shadow=True, **kwargs)
-        self.charmer.init_history(load=True, **kwargs)
-        self.reset_engine(restart=False, **kwargs)
-
-        return True
-
-    def execute_save(self, **kwargs) -> bool:
-        self.charmer.save_game(**kwargs)
-
-        return True
-
-    def execute_shadow_reload(self, **kwargs) -> bool:
-        self.init(restart=True, load_history=False, load_shadow=True, **kwargs)
 
     def show_history(self, n_show : int = 10, **kwargs):
         print(self.charmer.format_history(n_show=n_show, **kwargs))
@@ -148,7 +149,6 @@ class DirectorWizard:
 
         running = True
         retry = False
-        reset_no_restart = False
         print("Game Starting")
         self.show_history(**kwargs)
         refresh = refresh_threshold
@@ -163,7 +163,6 @@ class DirectorWizard:
                     asplit = action.split(" ", 1)
                     a2split = action.split(" ", 2)
                     ansplit = action.split(" ")
-                    additional = ''
                     lines = []
                     if action == '':
                         continue
@@ -220,7 +219,8 @@ class DirectorWizard:
                             continue
                         try:
                             player_input = self.charmer.director.travel(a2split[1].strip(), **kwargs)
-                            reset_no_restart = True
+                            self.reset_engine(restart=False, level='game', **kwargs)
+                            refresh = refresh_threshold
                         except DirectorError as e:
                             print(f"Director Error: {e}")
                             print(f"Valid locations: {', '.join(self.charmer.director.exit_keywords())}")
@@ -364,14 +364,14 @@ class DirectorWizard:
                         continue
                     elif action == 'load':
                         print('Loading Game')
-                        self.execute_load(**kwargs)
+                        self.init(restart = False, load_history=True, load_shadow=True, **kwargs)
                         self.show_history(**kwargs)
                         refresh = refresh_threshold
                         print('Game Loaded')
                         continue
                     elif action == 'renew':
                         print('Refreshing Shadow')
-                        self.execute_shadow_reload(**kwargs)
+                        self.init(restart=True, load_history=False, load_shadow=True, **kwargs)
                         self.show_history(**kwargs)
                         continue
                     elif action == 'scene':
@@ -380,7 +380,7 @@ class DirectorWizard:
                         continue
                     elif action == 'save':
                         print('Saving Game')
-                        self.execute_save(**kwargs)
+                        self.charmer.save_game(**kwargs)
                         print('Game Saved')
                         continue
                     elif action == 'restart':
@@ -435,10 +435,6 @@ class DirectorWizard:
                 else:
                     logger.debug("Using previous input")
                 
-                if reset_no_restart:
-                    #self.reset_engine(restart=False, **kwargs)
-                    refresh = 0
-
                 if player_input is not None:
                     print(f"{player_input}")
 
@@ -448,18 +444,19 @@ class DirectorWizard:
                     refresh += 1
 
                 if refresh <= 0:
-                    logger.info("Rebuilding Context")
+                    logger.info("Refreshing Engine")
                     prompt = self.charmer(**kwargs)
                     if nr == False:
-                        prompt = f'{prompt}\n{additional}'
-                    self.engine.prepare(system_context=self.current_system, restart=False, **kwargs)
-                    self.engine.execute(prompt=prompt, **kwargs)
+                        prompt = f'{prompt}\n'
+                    self.reset_engine(restart=False, level='scene', **kwargs)
+                    #self.engine.prepare(system_context='system', restart=False, **kwargs)
+                    self.engine.execute(prompt=prompt, checkpoint=True, **kwargs)
                     refresh = refresh_threshold
                 elif player_input is not None:
                     turn = self.charmer.last_turn(**kwargs)
                     turn += lines
                     expanded_input = self.charmer.turn(turn, **kwargs)
-                    self.engine.execute(prompt=f"{expanded_input}\n{additional}", **kwargs)
+                    self.engine.execute(prompt=f"{expanded_input}\n", checkpoint=True, **kwargs)
                     refresh -= 1
                     retry = False
 
@@ -474,7 +471,7 @@ class DirectorWizard:
                             break
                         logger.debug(f"Current Speaker: {current_speaker.split('(')[0]}")
                         prefix = f"{current_speaker}"
-                        self.engine.execute(prompt=prefix, **kwargs)
+                        self.engine.execute(prompt=prefix, checkpoint=False, **kwargs)
                         result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
                         if result is None:
                             # Rollback?

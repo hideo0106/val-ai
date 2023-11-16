@@ -35,19 +35,20 @@ CMAKE_ARGS="-DLLAMA_CUBLAS=on" python3 -m pip install ./llama-cpp-python/ --forc
 To run the CLI, simply invoke the package as a module:
 
 ```bash
-$ python -m valai
-usage: valai [-h] {summarize,charm,charm:init} ...
+$ python -m valai --help
+usage: valai [-h] {summarize,charm,pinnacle} ...
 
-ValAI CLI (v0.1.1)
+ValAI CLI (v0.1.2)
 
 options:
   -h, --help            show this help message and exit
 
 subcommands:
-  {summarize,charm,charm:init}
+  {summarize,charm,pinnacle}
                         Available commands
     summarize           Summarize an article
     charm               Run Charm
+    pinnacle            Run Pinnacle
 ```
 
 ## Models
@@ -111,14 +112,15 @@ options:
   -v, --verbose         Verbose output
 ```
 
-### Charm Game Engine
+### Pinnacle
 
-I have a little game that is sort of fun, which is a prototype for my context shadowing idea.  I had originally written it for koboldcpp as a test, but now with my FlowEngine, I can just run it here...
+As part of my experiments towards making a [game](https://github.com/54rt1n/pinnacle), I am experimenting with the rules system here.  This game features a director that orchestrates the current participant in a conversation flow. 
 
 ```bash
-$ python -m valai charm --help
-usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--scene-path SCENE_PATH] [--rl R_LENGTH] [--rt R_TEMP]
-                   [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS] [--ctx N_CTX] [-v]
+$ python -m valai pinnacle --help
+usage: valai pinnacle [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--guidance MODEL_GUIDANCE] [--scene SCENE_PATH]
+                      [--rl R_LENGTH] [--rt R_TEMP] [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS]
+                      [--ctx N_CTX] [-v]
 
 options:
   -h, --help            show this help message and exit
@@ -126,8 +128,47 @@ options:
                         Path to model
   --model-file MODEL_FILE
                         Model file (gguf)
-  --scene-path SCENE_PATH
-                        Path to scene
+  --guidance MODEL_GUIDANCE
+                        Guidance strategy
+  --scene SCENE_PATH    Path to scene
+  --rl R_LENGTH, --length R_LENGTH
+                        Max number of tokens in a game response
+  --rt R_TEMP, --temperature R_TEMP
+                        Response generation temperature
+  --constrain CONSTRAIN_DATA
+                        Constrain the history to this many bytes
+  --batch N_BATCH       LLAMA Batch Size
+  --layers N_GPU_LAYERS
+                        LLAMA GPU Layers
+  --ctx N_CTX           LLAMA Context Size
+  -v, --verbose         Verbose output
+```
+
+You get gameplay like this:
+
+```
+```
+
+
+### Charm Game Engine
+
+An early iteration of my context shadowing concept, I have a little game that is sort of fun.  I had originally written it for koboldcpp as a test, but now with my FlowEngine, I can just run it here...
+
+```bash
+$ python -m valai charm --help
+usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--guidance MODEL_GUIDANCE] [--scene SCENE_PATH]
+                   [--rl R_LENGTH] [--rt R_TEMP] [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS] [--ctx N_CTX]
+                   [-v]
+
+options:
+  -h, --help            show this help message and exit
+  --model-path MODEL_PATH
+                        Path to model
+  --model-file MODEL_FILE
+                        Model file (gguf)
+  --guidance MODEL_GUIDANCE
+                        Guidance strategy
+  --scene SCENE_PATH    Path to scene
   --rl R_LENGTH, --length R_LENGTH
                         Max number of tokens in a game response
   --rt R_TEMP, --temperature R_TEMP

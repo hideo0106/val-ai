@@ -22,7 +22,9 @@ class CharmWizard:
     def __init__(self, charmer : Charmer, engine : FlowEngine, system : Optional[str] = None):
         self.charmer = charmer
         self.engine = engine
-        self.current_system = system
+        if system is not None:
+            self.current_system = system
+            self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
 
     def reset_engine(self, restart : bool = False, **kwargs) -> bool:
         try:
@@ -51,7 +53,10 @@ class CharmWizard:
         if load_shadow:
             self.charmer.shadow.reload(**kwargs)
         self.charmer.init_history(load=load_history, **kwargs)
-        self.current_system = self.charmer.system(**kwargs)
+        system = self.charmer.system(**kwargs)
+        if system is not None:
+            self.current_system = system
+            self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
 
         self.reset_engine(restart=restart, **kwargs)
 
