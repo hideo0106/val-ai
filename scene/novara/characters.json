@@ -1,0 +1,430 @@
+{
+    "schema_type": "pinnacle_v1.0",
+    "player": {
+        "name": "$player",
+        "symbol": "+player+",
+        "title": "$player is not the chosen one, but is pretty lucky",
+        "character_keywords": ["player"],
+        "job": "Adventurer",
+        "traits": ["wizard", "charming", "trained", "scholar", "perceptive"],
+        "location_symbol": "=location_hills=",
+        "description": "You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.",
+        "disposition": 100,
+        "status": "Adventuring",
+        "inventory": ["staff", "bundle", "spellbook"],
+        "spells": ["flame", "charm", "heal", "telekenesis"]
+    },
+    "spells": {
+        "flame": "Creates a small flame",
+        "charm": "Puts a person into a state of hypnotic suggestion",
+        "heal": "Instantly heals a wound or injury",
+        "telekenesis": "Lift something into the air, including yourself."
+    },
+    "locations": {
+        "^location_harboria^": {
+            "name": "Harboria",
+            "at_location": "=location_harboria=",
+            "traits": ["empire", "peaceful", "superstitious", "magical"],
+            "traversable": false,
+            "description": "The great country of Harboria, spanning the region in the valley.  The capitol of J'Dhang is known far and wide."
+        },
+        "^location_novara^": {
+            "start": true,
+            "name": "Novara",
+            "parent_symbol": "^location_harboria^",
+            "distance": 500,
+            "at_location": "=location_novara=",
+            "traits": ["village", "peaceful", "inn", "forge", "trader"],
+            "travel_keywords": ["novara", "village"],
+            "related_symbols": ["%well%"],
+            "description": "Novara is a small but ancient village in Harboria, far from the capitol.  It is thought of as the backwaters of the kingdom, but is known for fine wood and legends of magic.  It has a poor economy.  The village is in a hollow, with mountains on one side and dark hills on the other."
+        },
+        "^location_inn^": {
+            "name": "The Golden Stag Inn",
+            "parent_symbol": "^location_novara^",
+            "distance": 0.5,
+            "at_location": "=location_inn=",
+            "traits": ["inn", "clean", "cozy", "room", "food"],
+            "travel_keywords": ["inn", "tavern", "bar"],
+            "related_symbols": ["%well%", "%hills%"],
+            "description": "The Golden Stag Inn, nestled at the heart of Novara, exudes a warm, inviting glow from its windows as dusk falls over the village. Its sturdy, oak-timbered structure, adorned with hanging lanterns, casts a cozy ambiance against the cobblestone street. Upon entering, visitors are greeted by the rich aroma of spiced mead and roasted meats. The walls are lined with tapestries depicting legends of old, and a large fireplace crackles in the common room, around which travelers and locals alike share tales and laughter. An assortment of trinkets and curios, collected by the innkeeper Mirela from various travelers, decorates the mantelpiece. The inn, renowned for its hearty fare and comfortable lodgings, serves as a hub of camaraderie and respite for weary souls seeking shelter and warmth."
+        },
+        "^location_smithy^": {
+            "name": "The Forge",
+            "parent_symbol": "^location_novara^",
+            "distance": 0.5,
+            "at_location": "=location_smithy=",
+            "traits": ["forge", "blacksmith", "metal", "tools", "weapons"],
+            "travel_keywords": ["smithy", "forge", "blacksmith"],
+            "related_symbols": ["%well%", "%hills%"]
+        },
+        "^location_hills^": {
+            "name": "The Novara Hills",
+            "parent_symbol": "^location_novara^",
+            "distance": 10,
+            "at_location": "=location_hills=",
+            "traits": ["hills", "rugged", "dangerous"],
+            "travel_keywords": ["hills"],
+            "related_symbols": ["%hills%"],
+            "description": "The hills are rugged, but navigable with determination or by the ancient roadways.  There are many animals and plants, and a few monsters.  There are animals such as goats, rabbits, and squirrels.  There are also beasts such as wolves, bears, and giant spiders.  Kobolds make homes in caves in the surrounding mountains."
+        },
+        "^location_small_tower^": {
+            "name": "The Small Tower",
+            "parent_symbol": "^location_hills^",
+            "distance": 10,
+            "at_location": "=location_small_tower=",
+            "traits": ["tower", "small", "overgrown", "magic", "magic crystal"],
+            "travel_keywords": ["tower"],
+            "related_symbols": ["%hills%", "%small_tower%"],
+            "description": "In a large clearing, the small tower is overgrown with vines and moss.  It is a small tower, only two stories tall.  It is made of stone, and has a metal door."
+        },
+        "^location_swampy_ravine^": {
+            "name": "The Swampy Ravine",
+            "parent_symbol": "^location_hills^",
+            "distance": 3,
+            "at_location": "=location_swampy_ravine=",
+            "traits": ["crevasse", "swamp", "trecherous"],
+            "travel_keywords": ["ravine"],
+            "related_symbols": ["%hills%"],
+            "description": "There is a deep ravine with a swamp at the bottom.  It is trecherous to traverse, but there is a worn dirt road."
+        }
+    },
+    "symbols": {
+        "%well%": {
+            "keywords": ["water", "well"],
+            "related_symbols": [],
+            "value": "The well has clear, cool water, but looks deep.  It is the primary source of water for everyone in Novara."
+        },
+        "%hills%": {
+            "keywords": ["hills", "here"],
+            "related_symbols": [],
+            "value": "The dark and scary hills located on the outskirts of Novara."
+        },
+        "%small_tower%": {
+            "keywords": ["tower"],
+            "related_symbols": [],
+            "value": "Hidden in the hills is a small tower, if you can find it."
+        }
+    },
+    "quests": {
+        "|peblos_quest_goat|": {
+            "name": "Peblos' Lost Goat",
+            "job": "Find a goat that is lost in the hills.",
+            "completed": false,
+            "incomplete": {
+                "objectives": [
+                    "Lily may have seen the goat at the small tower, ask her about it.",
+                    "The goat is eating vines on the side of the small tower.",
+                    "Return to Peblos with the goat."
+                ],
+                "symbols": {
+                    "%peblos_goat_missing%": {
+                        "keywords": ["goat", "missing"],
+                        "related_symbols": ["+peblos+"],
+                        "value": "Peblos has lost his goat, it wandered off into the hills.  He would be willing to pay someone to go and get it, but he could never go into those scary hills himself."
+                    },
+                    "%lily_seen_goat%": {
+                        "keywords": ["goat", "missing"],
+                        "related_symbols": ["+lily+"],
+                        "value": "Lily has seen the goat at the small tower, but she won't tell you where it is unless you do something for her."
+                    },
+                    "%peblos_goat%": {
+                        "keywords": ["goat", "missing"],
+                        "related_symbols": ["=location_small_tower="],
+                        "value": "The goat is by the small tower, eating at some of the vines growing there."
+                    }
+                }
+            },
+            "complete": {
+                "symbols": {
+                    "%peblos_goat_found%": {
+                        "keywords": ["goat", "found"],
+                        "related_symbols": ["+peblos+"],
+                        "value": "Peblos is very happy, $player has found his missing goat that was lost in the hills."
+                    }
+                }
+            },
+            "reward_silver": 25,
+            "reward_items": ["longsword"],
+            "reward_reputation": 15
+        },
+        "|monicas_quest_merchant|": {
+            "name": "Monica's Missing Merchant",
+            "job": "Search and Rescue",
+            "completed": false,
+            "incomplete": {
+                "objectives": [
+                    "Search the Novara Hills for any clues regarding the missing merchant.",
+                    "Navigate the dangers of the hills and confront any obstacles.",
+                    "Return to Monica with information or the merchant himself."
+                ],
+                "symbols": {
+                    "%merchant_missing%": {
+                        "keywords": ["merchant", "missing"],
+                        "related_symbols": ["+monica+"],
+                        "value": "Monica, the trader in Novara, has a merchant friend who went missing in the Novara Hills. She seeks your help to find him, offering a reward for information or his safe return."
+                    },
+                    "%missing_merchant_info%": {
+                        "keywords": ["clues", "merchant", "missing"],
+                        "related_symbols": ["=location_hills=", "^location_hills^"],
+                        "value": "Clues about the missing merchant. They might include a torn piece of clothing, a dropped item, or sightings by local wildlife.  They lead towards a swampy ravine."
+                    }
+                },
+                "characters": {
+                    "+lost_merchant+": {
+                        "name": "Janis",
+                        "job": "Merchant",
+                        "title": "The merchant Janis has been lost and is injured",
+                        "traits": ["animals", "trading", "travel", "trained", "survivalist"],
+                        "location_symbol": "=location_swampy_ravine=",
+                        "description": "A merchant who has gone missing in the hills.",
+                        "will_join": true,
+                        "disposition": 0,
+                        "silver": 100,
+                        "status": "Stuck",
+                        "inventory": ["shortsword", "coinpurse", "rations", "water"],
+                        "character_keywords": ["merchant", "janis"],
+                        "symbols": {
+                            "%merchant_injured%": {
+                                "keywords": ["injured", "merchant"],
+                                "related_symbols": ["+lost_merchant+"],
+                                "value": "The merchant is injured and needs help.  His leg is broken and he can't walk."
+                            }
+                        }
+                    }
+                }
+            },
+            "complete": {
+                "symbols": {
+                    "%merchant_rescued%": {
+                        "keywords": ["merchant", "found"],
+                        "related_symbols": [],
+                        "value": "Monica is pleased that you were able to find her friend."
+                    }
+                },
+                "characters": {
+                    "+lost_merchant+": {
+                        "name": "Janis",
+                        "title": "Janis, Monica's resuced friend",
+                        "character_keywords": ["merchant", "janis"],
+                        "related_symbols": [],
+                        "job": "Merchant",
+                        "traits": ["animals", "trading", "travel", "trained", "survivalist"],
+                        "location_symbol": "=location_inn=",
+                        "description": "A friend of Monica; a merchant who was lost in the hills, but rescued by $player.",
+                        "will_join": false,
+                        "disposition": 40,
+                        "silver": 100,
+                        "status": "Staying at the inn",
+                        "inventory": ["shortsword", "coinpurse", "rations", "water"],
+                        "prices": {
+                            "glass beads": 1,
+                            "rare_trade_goods": 100
+                        }
+                    }
+                }
+            },
+            "reward_silver": 100,
+            "reward_items": ["rare_trade_goods", "merchant's_thank_you_note"],
+            "reward_reputation": 15
+        }
+    },
+    "characters": {
+        "+peblos+": {
+            "name": "Peblos",
+            "title": "Peblos is the blacksmith of Novara",
+            "job": "Blacksmith",
+            "traits": ["hardworking", "afraid", "superstitious", "strong", "loyal"],
+            "location_symbol": "=location_smithy=",
+            "description": "A towering figure with muscular arms hardened by years of forging iron. His hair is as black as the coal he works with, and his eyes hold a fiery intensity. His clothes are perpetually dusted with soot, and the clanging sound of his hammer hitting metal is a constant in Novara.",
+            "disposition": 0,
+            "status": "Working at the anvil",
+            "inventory": ["hammer", "longsword"],
+            "silver": 250,
+            "character_keywords": ["peblos", "blacksmith"],
+            "symbols": {
+                "%peblos_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Peblos is afraid of the legends of monsters and ancient magic that are hidden in the depths of the hills."
+                }
+            },
+            "prices": {
+                "longsword": 100,
+                "shortsword": 25,
+                "pick": 10,
+                "hammer": 5
+            }
+        },
+        "+mirela+": {
+            "name": "Mirela",
+            "title": "Mirela is the innkeeper of Novara",
+            "job": "Innkeeper",
+            "traits": ["hospitable", "gossipy", "cheerful", "observant", "cunning"],
+            "location_symbol": "=location_inn=",
+            "description": "A plump, cheerful woman with rosy cheeks and sparkling eyes. Her hair is a flurry of graying curls, usually hidden under a bonnet. She wears a well-worn apron over her dress and is rarely seen without a welcoming smile.  Mirela is the mother of lily.",
+            "disposition": 20,
+            "status": "At the inn",
+            "inventory": ["room_key", "coinpurse"],
+            "silver": 75,
+            "character_keywords": ["mirela", "innkeeper"],
+            "related_symbols": [],
+            "symbols": {
+                "%mirela_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Mirela enjoys the mysterious allure of the hills, and uses the tales to entertain guests."
+                }, 
+                "%mirela_inn%": {
+                    "keywords": ["inn", "innkeeper"],
+                    "related_symbols": [],
+                    "value": "Mirela owns the Golden Stag Inn.  It is her pride and joy."
+                },
+                "%mirela_work%": {
+                    "keywords": ["work", "well"],
+                    "related_symbols": ["%well%", "%mirela_inn%"],
+                    "value": "Mirela has work fetching water from the well, it doesn't pay but will get you room and board in the stable."
+                },
+                "%mirela_room%": {
+                    "keywords": ["room"],
+                    "related_symbols": ["%mirela_inn%"],
+                    "value": "Mirela has two rooms for rent for paying customers, but if you can't pay there is always the stables."
+                }
+            },
+            "prices": {
+                "room": 10,
+                "meal": 5
+            }
+        },
+        "+meyer+": {
+            "name":         "Meyer",
+            "title":        "Meyer is the village elder of Novara",
+            "job":          "Village Elder",
+            "traits":       ["wise", "patient", "mystical", "respected", "authoritative"],
+            "location_symbol": "=location_novara=",
+            "description":  "An elderly man with a long white beard and wrinkled skin that shows his age. He walks with a slight stoop but carries a sense of dignity and wisdom. His old, worn-out robe gives him an air of authority and respect.",
+            "disposition":  0,
+            "status":       "Walking around town",
+            "silver":      30,
+            "inventory":    ["staff"],
+            "character_keywords": ["meyer", "elder"],
+            "symbols":     {
+                "%meyer_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Meyer believes in the ancient magic of the hills and respects its power."
+                },
+                "%meyer_daugher%": {
+                    "keywords": ["family"],
+                    "related_symbols": ["+meyer+", "+lily+"],
+                    "value": "Lily is Meyer's daughter.  It's hard being a single parent, but they get by just fine."
+                }
+            }
+        },
+        "+sibyl" : {
+            "name":         "Sibyl",
+            "title":        "Sibyl is the herbalist and healer of Novara",
+            "job":          "Herbalist and Healer",
+            "traits":       ["knowledgeable", "caring", "secretive", "mysterious", "empathetic"],
+            "location_symbol": "=location_novara=",
+            "description":  "A woman of indeterminate age with a serenity that puts people at ease. Her long, braided hair is as silver as the moonlight, and her eyes are a deep green like the herbs she works with. She often wears a cloak adorned with pouches containing her herbal concoctions.",
+            "disposition":  0,
+            "silver":       30,
+            "status":       "At her shop on the edge of town",
+            "inventory":    ["herbs", "pouch"],
+            "character_keywords": ["sibyl", "herbalist", "healer"],
+            "symbols":     {
+                "%sibyl_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Sibyl finds the hills a source of medicinal herbs and rare plants, but also respects its dangers."
+                }
+            },
+            "prices": {
+                "healing": 10
+            }
+        },
+        "+monica+": {
+            "name": "Monica",
+            "job": "Trader",
+            "title": "Monica is the trader of Novara",
+            "traits": ["hardworking", "practical", "conniving", "optimistic", "down-to-earth"],
+            "location_symbol": "=location_inn=",
+            "description": "Monica is a well-kept middle aged woman with silver eyes and blonde hair.  She runs the general goods store in the village, when she isn't drinking and trading at the Inn.",
+            "disposition": 0,
+            "silver": 4000,
+            "status": "At the Inn",
+            "inventory": ["dagger", "coinpurse"],
+            "character_keywords": ["monica"],
+            "symbols": {
+                "%monica_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Monica sees the hills as a necessary evil - home to the pests that threaten his crops, but also the source of firewood and game."
+                }
+            },
+            "prices": {
+                "dagger": 10,
+                "rope": 5,
+                "lantern": 10,
+                "flint": 5,
+                "rations": 5,
+                "water": 5,
+                "backpack": 10,
+                "lockpicks": 20
+            }
+        },
+        "+lily+": {
+            "name": "Lily",
+            "job": "Village Elder's Daughter",
+            "title": "Lily is the daughter of the village elder",
+            "traits": ["nice", "friendly", "secretive", "thief", "funny"],
+            "location_symbol": "=location_novara=",
+            "description": "The mischevious 19 year old daughter of the elder Meyer is quite well known by everyone in the village.  She is more about pranks than actually causing harm.  She is wiry and quick, wearing a simple dress, she has short black hair and brown eyes.  She secrets a pocket knife she uses for her mischief.",
+            "disposition": 10,
+            "will_join": true,
+            "silver": 1,
+            "status": "Sneaking around",
+            "inventory": ["knife"],
+            "character_keywords": ["lily"],
+            "symbols": {
+                "%lily_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Lily sneaks into the hills often.  She has a secret about the hills that she knows."
+                },
+                "%lily_secret%": {
+                    "keywords": ["tower", "secret"],
+                    "related_symbols": ["%hills%", "%small_tower%"],
+                    "value": "Lily knows about a small tower a few miles distant in the hills.  She would only ever tell her closest friends, someone who she really trusts."
+                }
+            },
+            "prices": {
+                "information": 1
+            }
+        },
+        "+thomas+": {
+            "name": "Thomas",
+            "job": "Miner",
+            "title": "Thomas is a miner and explorer",
+            "traits": ["clever", "thrillseeker", "liar", "hunter", "survivalist"],
+            "location_symbol": "=location_hills=",
+            "description": "A cloaked figure with a pickaxe.  He is always on the lookout for the next big score.",
+            "disposition": 0,
+            "silver": 100,
+            "status": "Prospecting",
+            "inventory": ["pick", "shortsword", "shovel", "rope", "backpack", "lantern", "flint", "rations", "water"],
+            "character_keywords": ["thomas", "guide"],
+            "symbols": {
+                "%thomas_hills%": {
+                    "keywords": ["hills"],
+                    "related_symbols": ["%hills%"],
+                    "value": "Thomas is a skilled prospector and knows the hills like the back of his hand."
+                }
+            },
+            "prices": {
+                "guide": 20
+            }
+        }
+    }
+}

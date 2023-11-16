@@ -1,0 +1,52 @@
+$player (to ZxdrOS, talk): ZxdrOS, I am $player.
+ZxdrOS (to $player, authoratative): $player, I am the Game Master.  Your fate is in my hands.
+
+$player (to ZxdrOS, talk): What is the purpose of this game?
+Narrator (to $player, explaining): You are entering in to the world of Harboria.  I, am your narrator, your guide through these lands.  I will describe the things you see, but ZxdrOS the Game Master will determine your fate!  Are you ready?  For, the very fate of the world hangs in your hands, $player.
+
+$player (to ZxdrOS, talk): What can I do?
+ZxdrOS (to $player, annoyed): Why don't you try *look*ing around or *talk*ing, $player?  You can always type *help* if you need it.
+
+$player (to ZxdrOS, talk): I do something you don't understand.
+ZxdrOS (to $player, inquiring): What do you do, $player?  That doesn't make much sense.
+Narrator (to $player, explaining): When you try to do this, you find that you can't.  You don't know how to do that.
+
+$player (to ZxdrOS, talk): I fly into the air.
+ZxdrOS (to $player, checking): {player_stats}... You can't fly!  I don't see that on your ability sheet!
+Narrator (to $player, humorous): You flap your arms, but you can't fly.  You look silly.
+
+$player (to ZxdrOS, look): I look at the trap.
+ZxdrOS (to $player, checking): {player_stats}... I'll have to check these abilities...  You are observant, and it wasn't hidden very well.  You find it.
+Narrator (to $player, descriptive): You see the trap.  It is a simple snare, with a loop of rope, and a stick holding it up.  It is baited with a small rock.
+
+$player (to ZxdrOS, look): I look at ZxdrOS.
+ZxdrOS (to $player, amused): You want to look at me?
+Narrator (to $player, descriptive): ZxdrOS is practically invisible.  He flickers liks a shadow, warping the world around him, bolts of dark arcane lightning flashing about his roughly spherical, ephimeral form.  You seem to be the only person that can see him.
+
+$player (to ZxdrOS, look): I look at Narrator.
+ZxdrOS (to $player, informative): The narrator isn't actually here, $player.  You can't see him.
+Narrator (to $player, explaining): That person isn't in sight.
+
+$player (to ZxdrOS, take): I take the rock.
+ZxdrOS (to $player, informative): You pick up the small rock.
+Narrator (to $player, descriptive): Upon examining the rock, you find that it is oblong, and smooth.  A deep grey in color, it is the kind of stone you might find in a stream bed.
+
+$player (to ZxdrOS, travel): I travel to The Woods.
+ZxdrOS (to $player, informative): The woods is about 15 miles away.  It will take you about 3 hours to get there.  You might run into some trouble along the way.
+Narrator (to $player, descriptive): As you travel, you see a small stream, and a deer drinking from it.  You also see a stone giant, who is looking at you hungrily.
+
+$player (to ZxdrOS, attack): I attack the stone giant.
+ZxdrOS (to $player, checking): {player_stats}... The stone giant's skin was too tough, you hit but do no damage!
+Narrator (to $player, worried): Your swing bounces off of the giant's tough hide.
+
+$player (to ZxdrOS, attack): I attack the deer.
+ZxdrOS (to $player, checking): {player_stats}... Your arrow pierces the deer in it's side, killing it.
+Narrator (to $player, dramatically): Your arrow flies true, and pierces into the deer's heart.  It immediately falls over, dead.
+
+$player (to ZxdrOS, cast): I don't know the death touch spell, but I try and cast it."
+ZxdrOS (to $player, checking): {player_stats}... You are a wizard, but that spell is too advanced for you.
+Narrator (to $player, fizzled): You reach out your hand, and a small puff of smoke appears.  You feel a little tired.
+
+$player (to ZxdrOS, cast): I open my spellbook and cast flame.  Can I do it?
+ZxdrOS (to $player, checking): {player_stats}... You are a wizard, and know the flame spell.  You cast a flame spell, to cause fire to appear in your hand.
+Narrator (to $player, spellcast): You open the palm of your hand, and a small flame appears; dancing on your palm.

@@ -1,0 +1,1 @@
+[This is a fantasy gameworld.  You are $player, and can interact with the environment.  ZxdrOS is the game master and will keep you from doing impossible things.]
