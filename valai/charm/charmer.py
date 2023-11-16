@@ -45,7 +45,7 @@ class Charmer:
             # cut current history in half
             ix = len(self.current_history)//2
             codex = [e for e in self.current_history if e[:5] == 'Codex']
-            # TODO codex
+            # TODO codex (codices should be preserved, just rolled to the beginning)
             self.past_history += self.current_history[0:ix]
             self.current_history = self.current_history[ix:]
             return True
@@ -124,7 +124,7 @@ class Charmer:
         self.current_history.append(turn)
         rolled = self.roll_history(**kwargs)
         if rolled == False:
-            logger.info(f"Adding History, {len(self.current_history)}")
+            logger.debug(f"Adding History, {len(self.current_history)}")
 
     def history_halve(self, current_clearance : int = 0, **kwargs) -> bool:
         return self.roll_history(force_roll=True, **kwargs)
@@ -147,7 +147,6 @@ class Charmer:
     @classmethod
     def from_config(cls, **kwargs) -> 'Charmer':
         config = { 
-            'database_uri': 'sqlite:///local/char.db',
             'scene_path': 'scene/verana',
             'player': '$player',
             'party': [],

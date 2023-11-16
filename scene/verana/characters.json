@@ -1,37 +1,49 @@
 {
+    "schema_type": "charm_v1.0",
     "locations": [
         {
             "name": "Harboria",
-            "symbol": "^location_harboria^"
+            "symbol": "^location_harboria^",
+            "at_location": "=location_harboria="
         },
         {
             "name": "Verana",
             "symbol": "^location_verana^",
             "parent_symbol": "=location_harboria=",
+            "at_location": "=location_verana=",
+            "travel_keywords": ["verana", "village"],
             "related_symbols": ["%well%"]
         },
         {
             "name": "The Golden Stag Inn",
             "symbol": "^location_inn^",
             "parent_symbol": "=location_verana=",
+            "at_location": "=location_inn=",
+            "travel_keywords": ["inn", "tavern", "bar"],
             "related_symbols": ["%mirela_inn%", "%mirela_room%", "%mirela_work%"]
         },
         {
             "name": "The Forge",
             "symbol": "^location_smithy^",
             "parent_symbol": "=location_verana=",
+            "at_location": "=location_smithy=",
+            "travel_keywords": ["smithy", "forge", "blacksmith"],
             "related_symbols": []
         },
         {
             "name": "The Verana Woods",
             "symbol": "^location_woods^",
             "parent_symbol": "=location_verana=",
+            "at_location": "=location_woods=",
+            "travel_keywords": ["woods", "forest"],
             "related_symbols": ["%woods%"]
         },
         {
             "name": "The Small Tower",
             "symbol": "^location_small_tower^",
             "parent_symbol": "=location_woods=",
+            "at_location": "=location_small_tower=",
+            "travel_keywords": ["tower"],
             "related_symbols": ["%small_tower%"]
         }
     ],
@@ -167,13 +179,14 @@
             "id": 1,
             "name": "Peblos",
             "symbol": "+peblos+",
+            "character_keywords": ["peblos", "blacksmith"],
             "related_symbols": ["%peblos_woods%"],
             "job": "Blacksmith",
             "traits": ["hardworking", "afraid", "superstitious", "strong", "loyal"],
             "location_symbol": "=location_smithy=",
             "description": "A towering figure with muscular arms hardened by years of forging iron. His hair is as black as the coal he works with, and his eyes hold a fiery intensity. His clothes are perpetually dusted with soot, and the clanging sound of his hammer hitting metal is a constant in Verana.",
             "disposition": 0,
-            "status": "Okay",
+            "status": "At the smithy",
             "quests": [{
                 "symbol": "|peblos_quest_goat|",
                 "name": "Peblos' Lost Goat",
@@ -186,36 +199,40 @@
             "id": 2,
             "name": "Mirela",
             "symbol": "+mirela+",
+            "character_keywords": ["mirela", "innkeeper"],
             "related_symbols": ["%mirela_woods%", "%mirela_inn%", "%mirela_work%", "%mirela_room%", "%mirela_daughter%"],
             "job": "Innkeeper",
             "traits": ["hospitable", "gossipy", "cheerful", "observant", "cunning"],
             "location_symbol": "=location_inn=",
             "description": "A plump, cheerful woman with rosy cheeks and sparkling eyes. Her hair is a flurry of graying curls, usually hidden under a bonnet. She wears a well-worn apron over her dress and is rarely seen without a welcoming smile.  Mirela is the mother of Lydia.",
             "disposition": 20,
-            "status": "At The Inn"
+            "status": "At the inn"
         },
         {
             "id":           3,
             "name":         "Brom",
             "symbol":       "+brom+",
+            "character_keywords": ["brom", "elder"],
             "related_symbols":     ["%brom_woods%"],
             "job":          "Village Elder",
             "traits":       ["wise", "patient", "mystical", "respected", "authoritative"],
             "location_symbol": "=location_verana=",
             "description":  "An elderly man with a long white beard and wrinkled skin that shows his age. He walks with a slight stoop but carries a sense of dignity and wisdom. His old, worn-out robe gives him an air of authority and respect.",
             "disposition":  0,
-            "status":       "Walking Around Town"
+            "status":       "Walking around town"
         },
         {
             "id":           4,
             "name":         "Sibyl",
             "symbol":       "+sibyl+",
+            "character_keywords": ["sibyl", "herbalist", "healer"],
             "related_symbols":     ["%sibyl_woods%"],
             "job":          "Herbalist and Healer",
             "traits":       ["knowledgeable", "caring", "secretive", "mysterious", "empathetic"],
             "location_symbol": "=location_verana=",
             "description":  "A woman of indeterminate age with a serenity that puts people at ease. Her long, braided hair is as silver as the moonlight, and her eyes are a deep green like the herbs she works with. She often wears a cloak adorned with pouches containing her herbal concoctions.",
-            "disposition":  0
+            "disposition":  0,
+            "status":       "At her shop on the edge of town"
         },
         {
             "id": 5,
@@ -239,7 +256,7 @@
             "location_symbol": "=location_verana=",
             "description": "The mischevious 19 year old daughter of the innkeeper Mirela is quite well known by everyone in the village.  She is more about pranks than actually causing harm.  She is wiry and quick, wearing a simple dress, she has short black hair and brown eyes.  She secrets a pocket knife she uses for her mischief.",
             "disposition": 0,
-            "status": "Sneaking Around"
+            "status": "Sneaking around"
         },
         {
             "id": 7,

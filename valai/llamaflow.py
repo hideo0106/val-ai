@@ -198,7 +198,7 @@ class FlowEngine:
     def token_clearance(self, new_tokens : int = 0, padding : int = 0, **kwargs) -> int:
         """Get the number of tokens remaining"""
         result = self.n_ctx - self.n_past - new_tokens - padding
-        logger.info(f"Token Clearance: {self.n_ctx} - {self.n_past} - {new_tokens} - {padding} = {result}")
+        logger.debug(f"Token Clearance: {self.n_ctx} - {self.n_past} - {new_tokens} - {padding} = {result}")
         return result
 
     def reset(self, **kwargs):
@@ -306,7 +306,7 @@ class FlowEngine:
 
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
-        logger.debug(f"```{prompt}```")
+        #logger.debug(f"```{prompt}```")
 
         if True:
             embd = []
@@ -491,7 +491,7 @@ class FlowEngine:
 
                 if len(log_chunks) > 0 and (not running or len(log_chunks) % log_chunk_length == 0):
                     logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
-                    logger.debug(f"Tokens ({n_generated}): {log_chunks}")
+                    #logger.debug(f"Tokens ({n_generated}): {log_chunks}")
                     log_chunks = []
 
                 if not running:

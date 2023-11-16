@@ -1,14 +1,16 @@
 from .analysis.summarizer import ChainOfAnalysis
-from .charming.wizard import run_charm
+from .charm.wizard import run_charm
+from .pinnacle.wizard import run_director
 from .scrape import fetch_url
 from .ioutil import CaptureFD
 
 VERSION = "0.1.1"
 
 DEFAULT_MODEL_PATH = 'local/models'
-DEFAULT_SCENE_PATH = 'scene/verana'
+DEFAULT_CHARM_SCENE_PATH = 'scene/verana'
+DEFAULT_PINNACLE_SCENE_PATH = 'scene/novara'
 DEFAULT_MODEL = 'zephyr-7b-beta.Q8_0.gguf'
-DEFAULT_GPU_LAYERS = 10
+DEFAULT_GPU_LAYERS = 16
 DEFAULT_BATCH_SIZE = 512
 DEFAULT_CONTEXT_SIZE = 2 ** 14
     
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     charm_parser.add_argument('--model-path', type=str, dest="model_path", default=DEFAULT_MODEL_PATH, help='Path to model')
     charm_parser.add_argument('--model-file', type=str, dest="model_file", default=DEFAULT_MODEL, help='Model file (gguf)')
     charm_parser.add_argument('--guidance', type=str, dest="model_guidance", default='dialog', help='Guidance strategy')
-    charm_parser.add_argument('--scene', type=str, dest="scene_path", default=DEFAULT_SCENE_PATH, help='Path to scene')
+    charm_parser.add_argument('--scene', type=str, dest="scene_path", default=DEFAULT_CHARM_SCENE_PATH, help='Path to scene')
     charm_parser.add_argument('--rl', '--length', type=int, default=250, dest='r_length', help='Max number of tokens in a game response')
     charm_parser.add_argument('--rt', '--temperature', type=float, default=0.7, dest="r_temp", help='Response generation temperature')
     charm_parser.add_argument('--constrain', type=int, default=12000, dest="constrain_data", help='Constrain the history to this many bytes')
@@ -84,9 +86,22 @@ if __name__ == '__main__':
     charm_parser.add_argument('--ctx', type=int, default=DEFAULT_CONTEXT_SIZE, dest="n_ctx", help='LLAMA Context Size')
     charm_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
 
-    # Add your original parser as a subparser
+    pinnacle_parser = argparse.ArgumentParser(add_help=False)
+    pinnacle_parser.add_argument('--model-path', type=str, dest="model_path", default=DEFAULT_MODEL_PATH, help='Path to model')
+    pinnacle_parser.add_argument('--model-file', type=str, dest="model_file", default=DEFAULT_MODEL, help='Model file (gguf)')
+    pinnacle_parser.add_argument('--guidance', type=str, dest="model_guidance", default='alpaca', help='Guidance strategy')
+    pinnacle_parser.add_argument('--scene', type=str, dest="scene_path", default=DEFAULT_PINNACLE_SCENE_PATH, help='Path to scene')
+    pinnacle_parser.add_argument('--rl', '--length', type=int, default=250, dest='r_length', help='Max number of tokens in a game response')
+    pinnacle_parser.add_argument('--rt', '--temperature', type=float, default=0.7, dest="r_temp", help='Response generation temperature')
+    pinnacle_parser.add_argument('--constrain', type=int, default=12000, dest="constrain_data", help='Constrain the history to this many bytes')
+    pinnacle_parser.add_argument('--batch', type=int, default=DEFAULT_BATCH_SIZE, dest='n_batch', help='LLAMA Batch Size')
+    pinnacle_parser.add_argument('--layers', type=int, default=DEFAULT_GPU_LAYERS, dest="n_gpu_layers", help='LLAMA GPU Layers')
+    pinnacle_parser.add_argument('--ctx', type=int, default=DEFAULT_CONTEXT_SIZE, dest="n_ctx", help='LLAMA Context Size')
+    pinnacle_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+
     summ_cmd = subparsers.add_parser('summarize', parents=[summary_parser], help='Summarize an article')
     summ_cmd = subparsers.add_parser('charm', parents=[charm_parser], help='Run Charm')
+    summ_cmd = subparsers.add_parser('pinnacle', parents=[pinnacle_parser], help='Run Pinnacle')
 
     args = parser.parse_args()
     kwargs = dict(args._get_kwargs())
@@ -102,5 +117,5 @@ if __name__ == '__main__':
     {
         'summarize': lambda: run_summarize(**kwargs),
         'charm': lambda: run_charm(**kwargs),
-        'charm:init': lambda: run_charm_load(**kwargs),
+        'pinnacle': lambda: run_director(**kwargs),
     }.get(kwargs.get('command', None), default)()

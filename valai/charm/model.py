@@ -14,11 +14,14 @@ class Location:
     """A class to represent a location in the game world."""
 
     def __init__(self, name: str, symbol: str, parent_symbol: Optional[str] = None,
+                 at_location : Optional[str] = None, travel_keywords : List[str] = [],
                  related_symbols: List[str] = [], character_symbols: List[str] = []):
         self.id = id
         self.name = name
         self.symbol = symbol
         self.parent_symbol = parent_symbol
+        self.at_location = at_location
+        self.travel_keywords = travel_keywords
         self.related_symbols = related_symbols
         self.character_symbols = character_symbols
 
@@ -63,10 +66,12 @@ class Character:
 
     def __init__(self, id: int, name: str, symbol: str, related_symbols: List[str], job: str, traits: List[str],
                  location_symbol: str, description: str, disposition: int, status: str = None,
-                 quests: Dict[str, Quest] = {}):
+                 quests: Dict[str, Quest] = {}, character_keywords : List[str] = []
+                 ):
         self.id = id
         self.name = name
         self.symbol = symbol
+        self.character_keywords = character_keywords
         self.related_symbols = related_symbols
         self.job = job
         self.traits = traits
@@ -307,7 +312,7 @@ class Symbolizer:
         if count == e_count or recurse == 0:
             return expanded_symbols
 
-        logger.info(f'Expanded {count} symbols, recursing...')
+        logger.debug(f'Expanded {count} symbols, recursing...')
 
         return cls.broaden(expanded_symbols, mode=mode, e_count=count, recurse=recurse-1)
 
@@ -435,7 +440,7 @@ class ContextShadowing:
 
 if __name__ == '__main__':
 
-    from ..charming.wizard import Charmer
+    from .wizard import Charmer
 
     logging.basicConfig(level=logging.DEBUG)
     shadow = ContextShadowing.from_file()

@@ -1,4 +1,4 @@
-# valai/charming/wizard.py
+# valai/charm/wizard.py
 
 import logging
 import os
@@ -8,8 +8,9 @@ from typing import Optional
 from ..analysis.summarizer import ChainOfAnalysis
 from ..ioutil import CaptureFD
 from ..llamaflow import FlowEngine, EngineException
-from ..charm.charmer import Charmer
-from ..charm.token import TokenFeatures
+
+from .charmer import Charmer
+from .token import TokenFeatures
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class CharmWizard:
         if restart:
             self.engine.clear_saved_context(**kwargs)
         if load_shadow:
-            self.charmer.shadow.reload()
+            self.charmer.shadow.reload(**kwargs)
         self.charmer.init_history(load=load_history, **kwargs)
         self.current_system = self.charmer.system(**kwargs)
 
@@ -375,7 +376,7 @@ class CharmWizard:
                             self.engine.reload_turn(**kwargs)
                         else:
                             response = ''.join(result).strip()
-                            if len(response) <= 1:
+                            if len(response) <= 1 and i == 0:
                                 logger.warn("No response from engine.")
                             if additional != '':
                                 response = f"{additional}{response}"
