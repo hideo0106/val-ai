@@ -12,7 +12,8 @@ class Location:
     def __init__(self, name: str, symbol: str, parent_symbol: Optional[str] = None,
                  distance : int = 0, at_location : Optional[str] = None,
                  travel_keywords : List[str] = [], traits : List[str] = [], traversable : bool = True,
-                 related_symbols: List[str] = [], description : Optional[str] = None, start : bool = False
+                 related_symbols: List[str] = [], description : Optional[str] = None, start : bool = False,
+                 enclosure : bool = False
                  ):
         self.name = name
         self.start = start
@@ -25,6 +26,7 @@ class Location:
         self.travel_keywords = travel_keywords
         self.related_symbols = related_symbols
         self.description = description
+        self.enclosure = enclosure
 
     @classmethod
     def from_dict(cls, **kwargs):

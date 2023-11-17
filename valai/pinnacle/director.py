@@ -217,12 +217,35 @@ class SceneDirector:
         return player_input
 
     def travel(self, target : str, **kwargs) -> str:
-        exit = self.scene.exit_for_keyword(target)
-        if exit is None:
+        loc_exit = self.scene.exit_for_keyword(target)
+        if loc_exit is None:
             raise DirectorError(f"Location {target} not found.")
+        loc_cur = self.scene.location
         # TODO add the ability to mark a location as visited
-        player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {self.scene.location.name} and I travel to {exit.name}.  What do I see?"""
-        self.add_residue(exit.travel_line(self.roster.player.sheet))
+        # TODO this is where random encounters would occur
+        distance = 0
+        if loc_cur.parent_symbol == loc_exit.symbol:
+            # We are traveling to a parent location, so we use our own distance
+            distance = loc_cur.distance
+        elif loc_exit.parent_symbol == loc_cur.symbol:
+            # We are traveling to a child location, so we use the child's distance
+            distance = loc_exit.distance
+
+        if distance > 1:
+            player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I travel to {loc_exit.name}.  It takes me {distance} hours.  What happens?"""
+            self.converse_party = True
+            self.rules = True
+        elif loc_exit.enclosure and ~loc_cur.enclosure:
+            player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I go outside to {loc_exit.name}.  What do I see?"""
+            self.converse_party = True
+        elif loc_exit.enclosure and loc_cur.enclosure:
+            player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I continue from {loc_cur.name} to {loc_exit.name}.  What do I see?"""
+            self.converse_party = True
+            self.rules = True
+        else:
+            player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I head over to {loc_exit.name}.  What do I see?"""
+            self.converse_party = True
+        self.add_residue(loc_exit.travel_line(self.roster.player.sheet))
         self.narration = True
         return player_input
     

@@ -5,8 +5,8 @@ import os
 from typing import Optional
 
 from ..analysis.summarizer import ChainOfAnalysis
+from ..flow import EngineException, FlowEngine
 from ..ioutil import CaptureFD
-from ..llamaflow import FlowEngine, EngineException
 
 from .charmer import DirectorCharmer
 from .exception import DirectorError
@@ -499,7 +499,7 @@ def run_director(**kwargs):
     app.run_wizard(**kwargs)
 
 if __name__ == "__main__":
-    from ..llamaflow import FlowEngine
+    from ..flow.llamaflow import FlowEngine
 
     logging.basicConfig(level=logging.DEBUG)
 

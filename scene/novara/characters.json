@@ -47,6 +47,7 @@
             "traits": ["inn", "clean", "cozy", "room", "food"],
             "travel_keywords": ["inn", "tavern", "bar"],
             "related_symbols": ["%well%", "%hills%"],
+            "enclosure": true,
             "description": "The Golden Stag Inn, nestled at the heart of Novara, exudes a warm, inviting glow from its windows as dusk falls over the village. Its sturdy, oak-timbered structure, adorned with hanging lanterns, casts a cozy ambiance against the cobblestone street. Upon entering, visitors are greeted by the rich aroma of spiced mead and roasted meats. The walls are lined with tapestries depicting legends of old, and a large fireplace crackles in the common room, around which travelers and locals alike share tales and laughter. An assortment of trinkets and curios, collected by the innkeeper Mirela from various travelers, decorates the mantelpiece. The inn, renowned for its hearty fare and comfortable lodgings, serves as a hub of camaraderie and respite for weary souls seeking shelter and warmth."
         },
         "^location_smithy^": {
@@ -56,6 +57,7 @@
             "at_location": "=location_smithy=",
             "traits": ["forge", "blacksmith", "metal", "tools", "weapons"],
             "travel_keywords": ["smithy", "forge", "blacksmith"],
+            "enclosure": true,
             "related_symbols": ["%well%", "%hills%"]
         },
         "^location_hills^": {
@@ -76,6 +78,7 @@
             "traits": ["tower", "small", "overgrown", "magic", "magic crystal"],
             "travel_keywords": ["tower"],
             "related_symbols": ["%hills%", "%small_tower%"],
+            "enclosure": true,
             "description": "In a large clearing, the small tower is overgrown with vines and moss.  It is a small tower, only two stories tall.  It is made of stone, and has a metal door."
         },
         "^location_swampy_ravine^": {
