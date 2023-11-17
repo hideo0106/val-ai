@@ -7,6 +7,8 @@ import multiprocessing
 from typing import Any, List, Optional, Dict
 import llama_cpp
 
+from .output import OutputHandler
+
 logger = logging.getLogger(__name__)
 
 class EngineException(Exception):
@@ -116,7 +118,7 @@ class FlowEngine:
         return cparams
 
     @classmethod
-    def from_config(cls, model_path : str, model_file : str, n_ctx : int, **kwargs):
+    def from_config(cls, model_path : str, model_file : str, n_ctx : int, output : Optional[OutputHandler] = None, **kwargs):
         """Create a new FlowEngine with the given parameters"""
         llama_cpp.llama_backend_init(numa=False)
 
@@ -129,10 +131,11 @@ class FlowEngine:
         cparams = cls.get_cparams(n_ctx=n_ctx, **kwargs)
 
         ctx = llama_cpp.llama_new_context_with_model(model, cparams)
-        return cls(model=model, ctx=ctx, n_ctx=n_ctx)
+        return cls(model=model, ctx=ctx, n_ctx=n_ctx, output=output)
     
-    def __init__(self, model : c_void_p, ctx : c_void_p, n_ctx : int):
+    def __init__(self, model : c_void_p, ctx : c_void_p, n_ctx : int, output : Optional[OutputHandler] = None):
         self.model = model
+        self.output = output
         self.ctx : llama_cpp.llama_context_p = ctx
         self.n_ctx = n_ctx
         self.n_past = 0
@@ -144,6 +147,9 @@ class FlowEngine:
         self.n_system : Dict[str, int] = {}
         self.system_tokens : Dict[str, List[llama_cpp.llama_token]] = {}
         self.current_system : Optional[str] = None
+
+    def set_output_handler(self, output : OutputHandler):
+        self.output = output
     
     def load_context(self, save_file : str, **kwargs) -> int:
         if not os.path.exists(save_file):
@@ -214,7 +220,7 @@ class FlowEngine:
         """Set a checkpoint for the current state"""
         return self.save_context(save_file=f"local/{checkpoint}.context.dat", **kwargs)
 
-    def execute(self, prompt : str, retry : bool = False, checkpoint : Optional[str] = None, **kwargs) -> int:
+    def execute(self, prompt : str, retry : bool = False, scope : Optional[str] = None, checkpoint : Optional[str] = None, **kwargs) -> int:
         """Execute the given prompt with the model"""
 
         self.prev_tokens = self.session_tokens.copy()
@@ -222,7 +228,7 @@ class FlowEngine:
         if checkpoint is not None:
             self.set_checkpoint(checkpoint=checkpoint, **kwargs)
 
-        rc = self.feed(prompt=prompt, **kwargs)
+        rc = self.feed(prompt=prompt, scope=scope, **kwargs)
         return rc
 
     def reload_turn(self, checkpoint : str = 'turn', **kwargs) -> int:
@@ -259,7 +265,7 @@ class FlowEngine:
         if restart:
             self.reset(system=False, **kwargs)
             if len(system) > 0:
-                rc = self.feed(prompt=system, **kwargs)
+                rc = self.feed(prompt=system, scope=system_context, show_progress=True, **kwargs)
                 if rc < 0:
                     logger.error("Failed to feed system prompt")
                     return rc
@@ -283,7 +289,7 @@ class FlowEngine:
         self.current_system = system_context
         return rc
 
-    def feed(self, prompt : str, n_batch : int, n_ctx : int, **kwargs) -> int:
+    def feed(self, prompt : str, n_batch : int, n_ctx : int, scope : Optional[str] = None, show_progress : bool = False, **kwargs) -> int:
         """Feed the given prompt to the model"""
         if prompt is None:
             logger.warning(f"Feeding empty prompt")
@@ -316,6 +322,10 @@ class FlowEngine:
         first_n = self.n_past
         logger.debug(f"Feeding ({pl} chars -> {n_of_tok} tokens), {input_consumed} consumed, {len(embd_inp)} remaining")
         logger.debug(f"```{prompt}```")
+        if self.output is not None and show_progress:
+            if scope is not None:
+                self.output.handle_token(f"{scope} - ")
+            self.output.handle_progress(0.0)
 
         if True:
             embd = []
@@ -341,6 +351,8 @@ class FlowEngine:
                     self.session_tokens += tokens
                     self.n_past += len(embd)
                     embd = []
+                    if self.output is not None and show_progress:
+                        self.output.handle_progress(float(input_consumed) / len(embd_inp))
         else:
             # TODO this is from the master branch of llama-cpp-python, so beware on 0.2.11
             embed_size = len(embd_inp)
@@ -491,6 +503,8 @@ class FlowEngine:
 
                     self.session_tokens.append(id)
                     response_tokens.append(piece)
+                    if self.output is not None:
+                        self.output.handle_token(piece)
                     remaining_tokens -= 1
                     last_piece = piece
                     last_id = id

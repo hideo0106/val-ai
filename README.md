@@ -38,7 +38,7 @@ To run the CLI, simply invoke the package as a module:
 $ python -m valai --help
 usage: valai [-h] {summarize,charm,pinnacle} ...
 
-ValAI CLI (v0.1.2)
+ValAI CLI (v0.1.3)
 
 options:
   -h, --help            show this help message and exit

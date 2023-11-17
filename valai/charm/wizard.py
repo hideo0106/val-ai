@@ -7,7 +7,7 @@ from typing import Optional
 
 from ..analysis.summarizer import ChainOfAnalysis
 from ..ioutil import CaptureFD
-from ..flow.llamaflow import FlowEngine, EngineException
+from ..engine.llamaflow import FlowEngine, EngineException
 
 from .charmer import Charmer
 from .token import TokenFeatures
@@ -417,7 +417,7 @@ def run_charm(**kwargs):
     app.run_charm(**kwargs)
 
 if __name__ == "__main__":
-    from ..flow.llamaflow import FlowEngine
+    from ..engine.llamaflow import FlowEngine
 
     logging.basicConfig(level=logging.DEBUG)
 

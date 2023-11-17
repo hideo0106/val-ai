@@ -4,7 +4,7 @@ from .pinnacle.wizard import run_director
 from .scrape import fetch_url
 from .ioutil import CaptureFD
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 DEFAULT_MODEL_PATH = 'local/models'
 DEFAULT_CHARM_SCENE_PATH = 'scene/verana'

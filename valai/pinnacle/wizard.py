@@ -1,11 +1,12 @@
 # valai/pinnacle/wizard.py
 
+import asyncio
 import logging
 import os
 from typing import Optional
 
 from ..analysis.summarizer import ChainOfAnalysis
-from ..flow import EngineException, FlowEngine
+from ..engine import EngineException, FlowEngine, OutputHandler
 from ..ioutil import CaptureFD
 
 from .charmer import DirectorCharmer
@@ -18,11 +19,24 @@ logger = logging.getLogger(__name__)
 class DirectorWizard:
     current_system : Optional[str]
 
-    def __init__(self, charmer : DirectorCharmer, engine : FlowEngine):
+    def __init__(self, charmer : DirectorCharmer, engine : FlowEngine, output : OutputHandler):
+        self.output = output
         self.charmer = charmer
         self.engine = engine
         self.current_system = None
         self.command_chain = []
+
+    @classmethod
+    def from_config(cls, **kwargs):
+        output = OutputHandler()
+        charmer = DirectorCharmer.from_config(**kwargs)
+        if not kwargs.get('verbose', False):
+            with CaptureFD() as co:
+                engine = FlowEngine.from_config(output=output, **kwargs)
+        else:
+            engine = FlowEngine.from_config(output=output, **kwargs)
+        
+        return cls(charmer=charmer, engine=engine, output=output)
 
     def reset_engine(self, restart : bool = False, level : str = 'game', **kwargs) -> bool:
         try:
@@ -38,28 +52,20 @@ class DirectorWizard:
                 # The scene header could potentially be injected into the stream in some more
                 # elegant way as well.
                 logger.debug(f"Sending prompt: {len(prompt)}")
-                self.engine.execute(prompt=prompt, checkpoint=None, **kwargs)
+                self.engine.execute(prompt=prompt, checkpoint=None, scope='scene', show_progress = True, **kwargs)
                 self.engine.set_checkpoint('scene', **kwargs)
             elif level == 'scene':
                 self.engine.reload_turn(checkpoint='scene', **kwargs)
 
             prompt = self.charmer(**kwargs)
-            self.engine.execute(prompt=prompt, checkpoint='turn', **kwargs)
+            self.engine.execute(prompt=prompt, checkpoint='turn', scope='history', show_progress = True, **kwargs)
             return True
         except EngineException as e:
             logging.error(f"Engine Exception: {e}")
             return False
     
-    @classmethod
-    def from_config(cls, **kwargs):
-        charmer = DirectorCharmer.from_config(**kwargs)
-        if not kwargs.get('verbose', False):
-            with CaptureFD() as co:
-                engine = FlowEngine.from_config(**kwargs)
-        else:
-            engine = FlowEngine.from_config(**kwargs)
-        
-        return cls(charmer=charmer, engine=engine)
+    def println(self, text : str, **kwargs):
+        self.output.handle_system(text)
 
     def init(self, restart : bool = True, load_history : bool = True, load_shadow : bool = True, **kwargs) -> bool:
         self.charmer.init_history(load=load_history, **kwargs)
@@ -82,57 +88,47 @@ class DirectorWizard:
 
         return True
 
-    def execute_chapter(self, **kwargs) -> bool:
-        # TODO highly experimental
-        self.engine.reset(**kwargs)
-        cod = ChainOfAnalysis(engine=self.engine)
-        result = cod(data='\n'.join(self.charmer.current_history), subject="Dialog", iterations=2, observations=7, paragraphs=2, theories=5, **kwargs)
-        result = f"Codex: ```{result}```"
-        self.charmer.add_history('chapter', result)
-
-        return True
-
     def execute_scene_analysis(self, **kwargs) -> bool:
         history = self.charmer.get_history(**kwargs)
         token_features = TokenFeatures.from_history(history=history, **kwargs)
         scenes = token_features.scene_documents(**kwargs)
         for c in scenes:
-            print(f"{c}")
+            self.println(f"{c}")
 
         return True
 
     def show_history(self, n_show : int = 10, **kwargs):
-        print(self.charmer.format_history(n_show=n_show, **kwargs))
+        self.println(self.charmer.format_history(n_show=n_show, **kwargs))
 
     def print_help(self):
-        print('Commands:')
-        print('  a/attack/kill <enemy> - Attack an enemy')
-        print('  b/buy <item> <price> - Buy an item from a merchant')
-        print('  c/cast <spell> <target (optional) - Cast a spell')
-        print('  i/inventory - show your inventory')
-        print('  l/location - show your current location')
-        print('  l/look <function word (optional)> <target (optional)> - Look at something, or look around')
-        print('  p/party - show your party')
-        print('  r/rest <target (optional)> - rest for the night')
-        print('  s/search <target> - search something')
-        print('  t/talk/say <character> <prompt> - Say something to a character')
-        print('  u/use <item> - Use an item')
-        print('  x/travel/go <location> - Travel to a location')
-        print(f'  q/ask <prompt> - Ask {self.charmer.director.roster.game_master} a question')
-        print('  join/invite <character> - invite a character to your party')
-        print('  kick <character> - kick a character from your party')
-        print('  save - save the game')
-        print('  load - load a saved game')
-        print('  show - show the last 10 turns')
-        print('  history - show the entire history')
-        print('  scene - analyze the scene')
-        print('  renew - reload the game configuration')
-        print('  restart - restart the game')
-        print('  quit - exit the game')
-        print('  help - show this help')
-        print('Cheats:')
-        print('  nr <prompt> - write prompt to engine, no return')
-        print('  ne <prompt> - write prompt to engine, no read')
+        self.println('Commands:')
+        self.println('  a/attack/kill <enemy> - Attack an enemy')
+        self.println('  b/buy <item> <price> - Buy an item from a merchant')
+        self.println('  c/cast <spell> <target (optional) - Cast a spell')
+        self.println('  i/inventory - show your inventory')
+        self.println('  l/location - show your current location')
+        self.println('  l/look <function word (optional)> <target (optional)> - Look at something, or look around')
+        self.println('  p/party - show your party')
+        self.println('  r/rest <target (optional)> - rest for the night')
+        self.println('  s/search <target> - search something')
+        self.println('  t/talk/say <character> <prompt> - Say something to a character')
+        self.println('  u/use <item> - Use an item')
+        self.println('  x/travel/go <location> - Travel to a location')
+        self.println(f'  q/ask <prompt> - Ask {self.charmer.director.roster.game_master} a question')
+        self.println('  join/invite <character> - invite a character to your party')
+        self.println('  kick <character> - kick a character from your party')
+        self.println('  save - save the game')
+        self.println('  load - load a saved game')
+        self.println('  show - show the last 10 turns')
+        self.println('  history - show the entire history')
+        self.println('  scene - analyze the scene')
+        self.println('  renew - reload the game configuration')
+        self.println('  restart - restart the game')
+        self.println('  quit - exit the game')
+        self.println('  help - show this help')
+        self.println('Cheats:')
+        self.println('  nr <prompt> - write prompt to engine, no return')
+        self.println('  ne <prompt> - write prompt to engine, no read')
 
     def read_prompt(self, prompt_style: str, prompt_path : str = "prompts", **kwargs) -> str:
         filename = f"{prompt_path}/{prompt_style}.txt"
@@ -143,13 +139,13 @@ class DirectorWizard:
             data = f.read()
         return data
 
-    def run_wizard(self, r_length : int, r_temp : float, refresh_threshold : int = 10, **kwargs):
-        print("Starting Director...")
+    async def run_wizard(self, r_length : int, r_temp : float, refresh_threshold : int = 10, **kwargs):
+        self.println("Starting Director...")
         self.init(**kwargs)
 
         running = True
         retry = False
-        print("Game Starting")
+        self.println("Game Starting")
         self.show_history(**kwargs)
         refresh = refresh_threshold
         last_input = ''
@@ -168,30 +164,30 @@ class DirectorWizard:
                         continue
                     elif a2split[0] == 'speak' or a2split[0] == 'talk' or a2split[0] == 'say' or a2split[0] == 't':
                         if len(a2split) != 3:
-                            print("Invalid speak command: speak <character> <prompt>")
-                            print(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
+                            self.println("Invalid speak command: speak <character> <prompt>")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
                             continue
                         try:
                             player_input = self.charmer.director.speak(target=a2split[1].strip(), dialog=a2split[2].strip(), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
-                            print(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
+                            self.println(f"Director Error: {e}")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
                             continue
                     elif a2split[0] == 'buy' or a2split[0] == 'b':
                         if len(a2split) != 3:
-                            print("Invalid speak command: buy <item> <price>")
+                            self.println("Invalid speak command: buy <item> <price>")
                             continue
                         try:
                             player_input = self.charmer.director.buy(item=a2split[1].strip(), price=a2split[2].strip(), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             items = self.charmer.director.scene.get_prices()
                             for item in items:
-                                print(f"{item[0]} - {item[1]} - {item[2]} silver")
+                                self.println(f"{item[0]} - {item[1]} - {item[2]} silver")
                             continue
                     elif ansplit[0] == 'cast' or ansplit[0] == 'c':
                         if 2 > len(a2split) < 3:
-                            print("Invalid speak command: cast <spell> <target (optional)>")
+                            self.println("Invalid speak command: cast <spell> <target (optional)>")
                             continue
                         try:
                             if len(ansplit) == 2:
@@ -201,33 +197,33 @@ class DirectorWizard:
                             elif len(ansplit) > 3:
                                 player_input = self.charmer.director.cast(spell=a2split[1].strip(), description=' '.join(a2split[2:]), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif asplit[0] == 'ask' or asplit[0] == 'q':
                         if len(asplit) != 2:
-                            print("Invalid speak command: ask <prompt>")
+                            self.println("Invalid speak command: ask <prompt>")
                             continue
                         try:
                             player_input = self.charmer.director.speak('none', dialog=asplit[1].strip(), override=self.charmer.director.roster.game_master, **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif a2split[0] == 'travel' or a2split[0] == 'go' or a2split[0] == 'x':
                         if len(a2split) != 2:
-                            print("Invalid travel command: travel <location>")
-                            print(f"Valid locations: {', '.join(self.charmer.director.exit_keywords())}")
+                            self.println("Invalid travel command: travel <location>")
+                            self.println(f"Valid locations: {', '.join(self.charmer.director.exit_keywords())}")
                             continue
                         try:
                             player_input = self.charmer.director.travel(a2split[1].strip(), **kwargs)
                             self.reset_engine(restart=False, level='game', **kwargs)
                             refresh = refresh_threshold
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
-                            print(f"Valid locations: {', '.join(self.charmer.director.exit_keywords())}")
+                            self.println(f"Director Error: {e}")
+                            self.println(f"Valid locations: {', '.join(self.charmer.director.exit_keywords())}")
                             continue
                     elif a2split[0] == 'rest' or a2split[0] == 'r':
                         if len(a2split) > 2:
-                            print("Invalid rest command: rest <target (optional)>")
+                            self.println("Invalid rest command: rest <target (optional)>")
                             continue
                         try:
                             if len(a2split) == 1:
@@ -235,60 +231,60 @@ class DirectorWizard:
                             else:
                                 player_input = self.charmer.director.rest(a2split[1].strip(), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif a2split[0] == 'take':
                         try:
                             #player_input = self.charmer.director.take(a2split[1].strip(), **kwargs)
                             continue
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif a2split[0] == 'inventory' or a2split[0] == 'i':
                         try:
-                            print(f"Silver - {self.charmer.director.roster.player.silver}")
-                            print("Your inventory:")
+                            self.println(f"Silver - {self.charmer.director.roster.player.silver}")
+                            self.println("Your inventory:")
                             for i in self.charmer.director.roster.player.inventory:
-                                print(f"- {i}")
+                                self.println(f"- {i}")
 
-                            print("Known Spells:")
+                            self.println("Known Spells:")
                             for s in self.charmer.director.roster.player.sheet.spells:
-                                print(f"- {s}")
+                                self.println(f"- {s}")
                             #player_input = self.charmer.director.take(a2split[1].strip(), **kwargs)
                             continue
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif a2split[0] == 'party':
                         # Show party details
                         if len(self.charmer.director.roster.party) == 0:
-                            print("No one is in your party.")
+                            self.println("No one is in your party.")
                             continue
-                        print("Your party:")
+                        self.println("Your party:")
                         for c in self.charmer.director.roster.get_party():
-                            print(f"{c}")
+                            self.println(f"{c}")
                         continue
                     elif a2split[0] == 'join' or a2split[0] == 'invite':
                         if len(a2split) != 2:
-                            print("Invalid join command: join <character>")
-                            print(f"Valid characters: {', '.join(self.charmer.director.party)}")
+                            self.println("Invalid join command: join <character>")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.party)}")
                             continue
                         try:
                             player_input = self.charmer.director.party(a2split[1].strip(), True, **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
-                            print(f"Valid characters: {', '.join(self.charmer.director.party_keywords())}")
+                            self.println(f"Director Error: {e}")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.party_keywords())}")
                             continue
                     elif a2split[0] == 'kick':
                         if len(a2split) != 2:
-                            print("Invalid join command: kick <character>")
-                            print(f"Valid characters: {', '.join(self.charmer.director.party_keywords())}")
+                            self.println("Invalid join command: kick <character>")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.party_keywords())}")
                             continue
                         try:
                             player_input = self.charmer.director.party(a2split[1].strip(), False, **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
-                            print(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
+                            self.println(f"Director Error: {e}")
+                            self.println(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
                             continue
                     elif a2split[0] == 'look' or a2split[0] == 'l':
                         try:
@@ -298,10 +294,10 @@ class DirectorWizard:
                             elif len(a2split) == 1:
                                 player_input = self.charmer.director.look(target=None, **kwargs)
                             else:
-                                print("Invalid look command: look <function word (optional)> <target (optional)>")
+                                self.println("Invalid look command: look <function word (optional)> <target (optional)>")
                                 continue
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif a2split[0] == 'search' or a2split[0] == 's':
                         try:
@@ -309,33 +305,33 @@ class DirectorWizard:
                                 target = ' '.join(a2split[1:]).strip()
                                 player_input = self.charmer.director.search(target=target, **kwargs)
                             else:
-                                print("Invalid look command: search <target>")
+                                self.println("Invalid look command: search <target>")
                                 continue
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif asplit[0] == 'use' or asplit[0] == 'u':
                         if len(asplit) != 2:
-                            print("Invalid use command: use <item>")
+                            self.println("Invalid use command: use <item>")
                             continue
                         try:
                             player_input = self.charmer.director.use(asplit[1].strip(), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif asplit[0] == 'attack' or asplit[0] == 'a' or asplit[0] == 'kill':
                         if len(asplit) != 2:
-                            print("Invalid use command: attack <enemy>")
+                            self.println("Invalid use command: attack <enemy>")
                             continue
                         try:
                             player_input = self.charmer.director.attack(asplit[1].strip(), **kwargs)
                         except DirectorError as e:
-                            print(f"Director Error: {e}")
+                            self.println(f"Director Error: {e}")
                             continue
                     elif action == 'l' or action == 'location':
-                        print(f"Current Location:")
-                        print(self.charmer.director.scene.location.location_line())
-                        print(self.charmer.director.scene.location.description_line())
+                        self.println(f"Current Location:")
+                        self.println(self.charmer.director.scene.location.location_line())
+                        self.println(self.charmer.director.scene.location.description_line())
                         continue
                     elif asplit[0] == 'nr':
                         nr = True
@@ -346,48 +342,48 @@ class DirectorWizard:
                     elif asplit[0] == 'ne':
                         ne = True
                         if (len(asplit) == 1):
-                            print('No prompt specified')
+                            self.println('No prompt specified')
                             continue
                         else:
                             player_input = f"{asplit[1].strip()}"
                     elif action == 'quit':
-                        print('Are you sure? (y/N)')
+                        self.println('Are you sure? (y/N)')
                         quitting = input('> ')
                         if quitting == 'y':
-                            print('Goodbye')
+                            self.println('Goodbye')
                             exit(0)
                         else:
-                            print('Continuing')
+                            self.println('Continuing')
                             continue
                     elif action == 'show':
                         self.show_history(**kwargs)
                         continue
                     elif action == 'load':
-                        print('Loading Game')
+                        self.println('Loading Game')
                         self.init(restart = False, load_history=True, load_shadow=True, **kwargs)
                         self.show_history(**kwargs)
                         refresh = refresh_threshold
-                        print('Game Loaded')
+                        self.println('Game Loaded')
                         continue
                     elif action == 'renew':
-                        print('Refreshing Shadow')
+                        self.println('Refreshing Shadow')
                         self.init(restart=True, load_history=False, load_shadow=True, **kwargs)
                         self.show_history(**kwargs)
                         continue
                     elif action == 'scene':
-                        print('Scene Analysis')
+                        self.println('Scene Analysis')
                         self.execute_scene_analysis(**kwargs)
                         continue
                     elif action == 'save':
-                        print('Saving Game')
+                        self.println('Saving Game')
                         self.charmer.save_game(**kwargs)
-                        print('Game Saved')
+                        self.println('Game Saved')
                         continue
                     elif action == 'restart':
-                        print('Are you sure? (y/N)')
+                        self.println('Are you sure? (y/N)')
                         idata = input('> ')
                         if idata == 'y':
-                            print('Game Restarted')
+                            self.println('Game Restarted')
                             self.charmer.director.roster.reset_scene()
                             self.init(restart=True, load_history=False, load_shadow=True, **kwargs)
                             #self.charmer.set_scene('^location_novara^', **kwargs)
@@ -395,17 +391,17 @@ class DirectorWizard:
                             refresh = refresh_threshold
                             continue
                         else:
-                            print('Continuing')
+                            self.println('Continuing')
                             continue
                     elif action == 'history':
-                        print('History')
+                        self.println('History')
                         self.show_history(n_show = -1, **kwargs)
                         continue
                     elif action == 'help':
                         self.print_help()
                         continue
                     else:
-                        print("Invalid request")
+                        self.println("Invalid request")
                         self.print_help()
                         continue
                     
@@ -436,7 +432,7 @@ class DirectorWizard:
                     logger.debug("Using previous input")
                 
                 if player_input is not None:
-                    print(f"{player_input}")
+                    self.println(f"{player_input}")
 
                 if retry:
                     self.charmer.pop()
@@ -450,13 +446,13 @@ class DirectorWizard:
                         prompt = f'{prompt}\n'
                     self.reset_engine(restart=False, level='scene', **kwargs)
                     #self.engine.prepare(system_context='system', restart=False, **kwargs)
-                    self.engine.execute(prompt=prompt, checkpoint=True, **kwargs)
+                    self.engine.execute(prompt=prompt, checkpoint=True, scope='refresh', show_progress = True, **kwargs)
                     refresh = refresh_threshold
                 elif player_input is not None:
                     turn = self.charmer.last_turn(**kwargs)
                     turn += lines
                     expanded_input = self.charmer.turn(turn, **kwargs)
-                    self.engine.execute(prompt=f"{expanded_input}\n", checkpoint=True, **kwargs)
+                    self.engine.execute(prompt=f"{expanded_input}\n", checkpoint=True, show_progress = False, **kwargs)
                     refresh -= 1
                     retry = False
 
@@ -467,15 +463,15 @@ class DirectorWizard:
                         current_speaker = self.charmer.director.speaker_turn()
                         if current_speaker is None:
                             # End of turn
-                            print('===')
                             break
                         logger.debug(f"Current Speaker: {current_speaker.split('(')[0]}")
                         prefix = f"{current_speaker}"
-                        self.engine.execute(prompt=prefix, checkpoint=False, **kwargs)
-                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
+                        self.output.handle_token(current_speaker)
+                        self.engine.execute(prompt=prefix, checkpoint=False, show_progress=False, **kwargs)
+                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, token_handler=self.output, **self.charmer.guidance.tokens, **kwargs)
                         if result is None:
                             # Rollback?
-                            print("No response from engine.")
+                            self.println("No response from engine.")
                             continue
                         else:
                             response = ''.join(result).strip()
@@ -483,7 +479,7 @@ class DirectorWizard:
                                 # End of turn
                                 break
                             response = f"{prefix}{response}"
-                            print(f"{response}")
+                            #self.println(f"{response}")
                             self.charmer.add_history('model', response)
                 check_input = True
 
@@ -496,11 +492,9 @@ class DirectorWizard:
 
 def run_director(**kwargs):
     app = DirectorWizard.from_config(**kwargs)
-    app.run_wizard(**kwargs)
+    asyncio.run(app.run_wizard(**kwargs))
 
 if __name__ == "__main__":
-    from ..flow.llamaflow import FlowEngine
-
     logging.basicConfig(level=logging.DEBUG)
 
     config = {

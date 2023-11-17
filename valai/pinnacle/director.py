@@ -233,18 +233,14 @@ class SceneDirector:
 
         if distance > 1:
             player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I travel to {loc_exit.name}.  It takes me {distance} hours.  What happens?"""
-            self.converse_party = True
             self.rules = True
         elif loc_exit.enclosure and ~loc_cur.enclosure:
             player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I go outside to {loc_exit.name}.  What do I see?"""
-            self.converse_party = True
         elif loc_exit.enclosure and loc_cur.enclosure:
             player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I continue from {loc_cur.name} to {loc_exit.name}.  What do I see?"""
-            self.converse_party = True
             self.rules = True
         else:
             player_input = f"""{self.roster.player_name} (to ZxdrOS, travel):  I leave {loc_cur.name} and I head over to {loc_exit.name}.  What do I see?"""
-            self.converse_party = True
         self.add_residue(loc_exit.travel_line(self.roster.player.sheet))
         self.narration = True
         return player_input

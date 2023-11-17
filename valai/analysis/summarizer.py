@@ -2,7 +2,7 @@
 
 import random
 import logging
-from ..flow.llamaflow import FlowEngine
+from ..engine.llamaflow import FlowEngine
 
 logger = logging.getLogger(__name__)
 

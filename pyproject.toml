@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "valai"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = ["Martin Bukowski <mbukowski@bmds.us>"]
 readme = "README.md"
