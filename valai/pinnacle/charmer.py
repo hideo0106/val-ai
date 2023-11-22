@@ -388,18 +388,11 @@ class DirectorCharmer:
 
     @classmethod
     def from_config(cls, **kwargs) -> 'Charmer':
-        config = { 
-            'scene_path': 'scene/verana',
-            'player': '$player',
-            'party': [],
-            'location_name': 'Verana',
-            'model_guidance': 'dialog',
-            **kwargs }
         character_dialog = DirectorDialog()
         director = SceneDirector.from_config(character_dialog=character_dialog, **kwargs)
-        library = Librarian.from_config(**config)
-        shadow = ContextShadowing.from_config(character_dialog=character_dialog, **config)
-        guidance = GuidanceStrategy.from_config(**config)
+        library = Librarian.from_config(**kwargs)
+        shadow = ContextShadowing.from_config(character_dialog=character_dialog, **kwargs)
+        guidance = GuidanceStrategy.from_config(**kwargs)
         return cls(director=director, library=library, shadow=shadow, guidance=guidance)
     
     def save_game(self, **kwargs) -> str:
@@ -409,7 +402,7 @@ class DirectorCharmer:
     @classmethod
     def save_game_text(cls, history: list[str], **kwargs) -> str:
         config = {
-            'save_file': 'local/directorgame.txt',
+            'save_file': 'local/pinnacle_savegame.txt',
             **kwargs
         }
 
@@ -423,7 +416,7 @@ class DirectorCharmer:
     @classmethod
     def load_game_text(cls, **kwargs) -> Optional[list[str]]:
         config = {
-            'save_file': 'local/directorgame.txt',
+            'save_file': 'local/pinnacle_savegame.txt',
             **kwargs
         }
 

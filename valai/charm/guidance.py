@@ -231,14 +231,17 @@ Text to be summarized
     def filter_display(self, lines : List[str]):
         return [l for l in lines if l[:3] != '###']
 
+guidance_opts = {
+    'simple': SimplePromptStrategy,
+    'chatml': ChatMLPromptStrategy,
+    'dialog': DialogPromptStrategy,
+    'alpaca': AlpacaPromptStrategy
+}
+
+GUIDANCE_TYPES = list(guidance_opts.keys())
+
 def guidance_factory(model_guidance : str, **kwargs) -> GuidanceStrategy:
-    if model_guidance == 'simple':
-        return SimplePromptStrategy()
-    elif model_guidance == 'chatml':
-        return ChatMLPromptStrategy(**kwargs)
-    elif model_guidance == 'dialog':
-        return DialogPromptStrategy(**kwargs)
-    elif model_guidance == 'alpaca':
-        return AlpacaPromptStrategy(**kwargs)
+    if model_guidance in guidance_opts:
+        return guidance_opts[model_guidance](**kwargs)
     else:
         raise ValueError(f"Unknown guidance strategy {model_guidance}")

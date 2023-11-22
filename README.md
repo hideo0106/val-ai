@@ -38,7 +38,7 @@ To run the CLI, simply invoke the package as a module:
 $ python -m valai --help
 usage: valai [-h] {summarize,charm,pinnacle} ...
 
-ValAI CLI (v0.1.3)
+ValAI CLI (v0.1.4)
 
 options:
   -h, --help            show this help message and exit
@@ -118,9 +118,11 @@ As part of my experiments towards making a [game](https://github.com/54rt1n/pinn
 
 ```bash
 $ python -m valai pinnacle --help
-usage: valai pinnacle [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--guidance MODEL_GUIDANCE] [--scene SCENE_PATH]
-                      [--rl R_LENGTH] [--rt R_TEMP] [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS]
-                      [--ctx N_CTX] [-v]
+usage: valai pinnacle [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE]
+                      [--guidance MODEL_GUIDANCE] [--resources RESOURCES_PATH]
+                      [--scene SCENE_NAME] [--rl R_LENGTH] [--rt R_TEMP]
+                      [--constrain CONSTRAIN_DATA] [--batch N_BATCH]
+                      [--layers N_GPU_LAYERS] [--ctx N_CTX] [-v]
 
 options:
   -h, --help            show this help message and exit
@@ -129,8 +131,10 @@ options:
   --model-file MODEL_FILE
                         Model file (gguf)
   --guidance MODEL_GUIDANCE
-                        Guidance strategy
-  --scene SCENE_PATH    Path to scene
+                        Guidance strategy (simple, chatml, dialog, alpaca)
+  --resources RESOURCES_PATH
+                        Path to resources
+  --scene SCENE_NAME    Scene name
   --rl R_LENGTH, --length R_LENGTH
                         Max number of tokens in a game response
   --rt R_TEMP, --temperature R_TEMP
@@ -147,6 +151,19 @@ options:
 You get gameplay like this:
 
 ```
+$player (to ZxdrOS, travel):  I head in to the The Golden Stag Inn.  What do I see?
+Narrator (to $player, indignant): You enter The Golden Stag Inn, a cozy establishment with a thatched roof and wooden sign swinging in the breeze. It has a large wooden door with a brass handle, and a small garden out front filled with colorful flowers.
+
+> t
+Invalid talk command: talk <character> <prompt>
+Valid characters: mirela, innkeeper, monica
+
+> t mirela I need a room for the night.
+$player (to Mirela, talk): I need a room for the night.
+Mirela (to $player, indignant): Of course, traveler. How many nights will you be staying?
+Narrator (to $player, observational): Mirela is a kindly woman with a warm smile and a hearty laugh. She wears a long apron over her dress, and has a friendly demeanor.
+
+> 
 ```
 
 
@@ -156,9 +173,11 @@ An early iteration of my context shadowing concept, I have a little game that is
 
 ```bash
 $ python -m valai charm --help
-usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE] [--guidance MODEL_GUIDANCE] [--scene SCENE_PATH]
-                   [--rl R_LENGTH] [--rt R_TEMP] [--constrain CONSTRAIN_DATA] [--batch N_BATCH] [--layers N_GPU_LAYERS] [--ctx N_CTX]
-                   [-v]
+usage: valai charm [-h] [--model-path MODEL_PATH] [--model-file MODEL_FILE]
+                   [--guidance MODEL_GUIDANCE] [--resources RESOURCES_PATH]
+                   [--scene SCENE_NAME] [--rl R_LENGTH] [--rt R_TEMP]
+                   [--constrain CONSTRAIN_DATA] [--batch N_BATCH]
+                   [--layers N_GPU_LAYERS] [--ctx N_CTX] [-v]
 
 options:
   -h, --help            show this help message and exit
@@ -167,8 +186,10 @@ options:
   --model-file MODEL_FILE
                         Model file (gguf)
   --guidance MODEL_GUIDANCE
-                        Guidance strategy
-  --scene SCENE_PATH    Path to scene
+                        Guidance strategy (simple, chatml, dialog, alpaca)
+  --resources RESOURCES_PATH
+                        Path to resources
+  --scene SCENE_NAME    Scene name
   --rl R_LENGTH, --length R_LENGTH
                         Max number of tokens in a game response
   --rt R_TEMP, --temperature R_TEMP

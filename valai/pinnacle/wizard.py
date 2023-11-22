@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..analysis.summarizer import ChainOfAnalysis
 from ..engine import EngineException, FlowEngine, OutputHandler
+from ..engine.grammar import load_grammar
 from ..ioutil import CaptureFD
 
 from .charmer import DirectorCharmer
@@ -26,9 +27,29 @@ class DirectorWizard:
         self.current_system = None
         self.command_chain = []
 
+    @staticmethod
+    def expand_config(config : dict, **kwargs) -> dict:
+        # TODO this should be a typed dict coming out
+        config = {
+            'resources_path': 'resources',
+            'scene_name': 'novara',
+            'model_guidance': 'dialog',
+            'resources_path': 'resources',
+            'scene_name': 'novara',
+            'player': '$player',
+            'location_name': 'Novara',
+            'model_guidance': 'dialog',
+            **config,
+            **kwargs
+        }
+        config['scene_path'] = os.path.join(config['resources_path'], 'scene', config['scene_name'])
+        config['grammar_path'] = os.path.join(config['resources_path'], 'grammar')
+        return config
+
     @classmethod
     def from_config(cls, **kwargs):
         output = OutputHandler()
+
         charmer = DirectorCharmer.from_config(**kwargs)
         if not kwargs.get('verbose', False):
             with CaptureFD() as co:
@@ -114,7 +135,7 @@ class DirectorWizard:
         self.println('  t/talk/say <character> <prompt> - Say something to a character')
         self.println('  u/use <item> - Use an item')
         self.println('  x/travel/go <location> - Travel to a location')
-        self.println(f'  q/ask <prompt> - Ask {self.charmer.director.roster.game_master} a question')
+        self.println(f'  q/ask <prompt> - Ask {self.charmer.director.roster.game_master.sheet.name} a question')
         self.println('  join/invite <character> - invite a character to your party')
         self.println('  kick <character> - kick a character from your party')
         self.println('  save - save the game')
@@ -150,6 +171,8 @@ class DirectorWizard:
         refresh = refresh_threshold
         last_input = ''
         check_input = True
+        grammar_s = load_grammar(grammar_file="pinnacle_turn_s.gbnf", **kwargs)
+        grammar_d = load_grammar(grammar_file="pinnacle_turn_d.gbnf", **kwargs)
         while running:
             try:
                 nr = False
@@ -162,9 +185,13 @@ class DirectorWizard:
                     lines = []
                     if action == '':
                         continue
+                    elif a2split[0] == 'gram':
+                        grammar_s = load_grammar(grammar_file="pinnacle_turn_s.gbnf", **kwargs)
+                        grammar_d = load_grammar(grammar_file="pinnacle_turn_d.gbnf", **kwargs)
+                        continue
                     elif a2split[0] == 'speak' or a2split[0] == 'talk' or a2split[0] == 'say' or a2split[0] == 't':
                         if len(a2split) != 3:
-                            self.println("Invalid speak command: speak <character> <prompt>")
+                            self.println("Invalid talk command: talk <character> <prompt>")
                             self.println(f"Valid characters: {', '.join(self.charmer.director.character_keywords())}")
                             continue
                         try:
@@ -175,7 +202,7 @@ class DirectorWizard:
                             continue
                     elif a2split[0] == 'buy' or a2split[0] == 'b':
                         if len(a2split) != 3:
-                            self.println("Invalid speak command: buy <item> <price>")
+                            self.println("Invalid buy command: buy <item> <price>")
                             continue
                         try:
                             player_input = self.charmer.director.buy(item=a2split[1].strip(), price=a2split[2].strip(), **kwargs)
@@ -187,7 +214,7 @@ class DirectorWizard:
                             continue
                     elif ansplit[0] == 'cast' or ansplit[0] == 'c':
                         if 2 > len(a2split) < 3:
-                            self.println("Invalid speak command: cast <spell> <target (optional)>")
+                            self.println("Invalid cast command: cast <spell> <target (optional)>")
                             continue
                         try:
                             if len(ansplit) == 2:
@@ -201,7 +228,7 @@ class DirectorWizard:
                             continue
                     elif asplit[0] == 'ask' or asplit[0] == 'q':
                         if len(asplit) != 2:
-                            self.println("Invalid speak command: ask <prompt>")
+                            self.println("Invalid ask command: ask <prompt>")
                             continue
                         try:
                             player_input = self.charmer.director.speak('none', dialog=asplit[1].strip(), override=self.charmer.director.roster.game_master, **kwargs)
@@ -430,7 +457,7 @@ class DirectorWizard:
                     last_input = player_input
                 else:
                     logger.debug("Using previous input")
-                
+
                 if player_input is not None:
                     self.println(f"{player_input}")
 
@@ -459,7 +486,11 @@ class DirectorWizard:
                 if ne == False:
                     iters = 0
                     while True:
+                        grammar_s.reset()
+                        grammar_d.reset()
+                
                         iters += 1
+                        traited = self.charmer.director.trait is not None
                         current_speaker = self.charmer.director.speaker_turn()
                         if current_speaker is None:
                             # End of turn
@@ -468,7 +499,12 @@ class DirectorWizard:
                         prefix = f"{current_speaker}"
                         self.output.handle_token(current_speaker)
                         self.engine.execute(prompt=prefix, checkpoint=False, show_progress=False, **kwargs)
-                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, token_handler=self.output, **self.charmer.guidance.tokens, **kwargs)
+                        if traited:
+                            t_grammar = grammar_s
+                        else:
+                            t_grammar = grammar_d
+                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, token_handler=self.output,
+                                                  grammar=t_grammar, **self.charmer.guidance.tokens, **kwargs)
                         if result is None:
                             # Rollback?
                             self.println("No response from engine.")
@@ -491,8 +527,9 @@ class DirectorWizard:
                 check_input = False
 
 def run_director(**kwargs):
-    app = DirectorWizard.from_config(**kwargs)
-    asyncio.run(app.run_wizard(**kwargs))
+    config = DirectorWizard.expand_config(config=kwargs)
+    app = DirectorWizard.from_config(**config)
+    asyncio.run(app.run_wizard(**config))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -501,7 +538,8 @@ if __name__ == "__main__":
         'model_path': '/mnt/biggy/ai/llama/gguf/',
         'model_file': 'zephyr-7b-beta.Q8_0.gguf',
         'model_guidance': 'alpaca',
-        'scene_path': 'scene/novara',
+        'resources_path': 'resources',
+        'scene_name': 'novara',
         'n_ctx': 2 ** 13,
         'n_batch': 512,
         'n_gpu_layers': 16,
@@ -514,5 +552,3 @@ if __name__ == "__main__":
     app = DirectorWizard.from_config(**config)
 
     app.run_wizard(**config)
-
-    

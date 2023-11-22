@@ -397,6 +397,7 @@ class FlowEngine:
               sequence_tokens : list = [], log_chunk_length : int = 25, n_temp: float = 0.7,
               mirostat: int = 0, mirostat_tau : float = 0, mirostat_eta : float = 0, top_k: int = 40,
               n_tfs_z: float = 0.0, n_typical_p: float = 0.0, n_top_p: float = 0.0,
+              grammar: Optional[llama_cpp.LlamaGrammar] = None,
                 **kwargs) -> Optional[List[Any]]:
         """Read from the model until the given number of tokens is reached"""
         remaining_tokens = max_tokens
@@ -413,11 +414,13 @@ class FlowEngine:
 
         buf = (c_char * 32)()
         log_chunks = []
+        log_ids = []
         last_piece = ''
         last_id = 0
 
         try:
             while remaining_tokens > 0:
+                # Mirroring llama.cpp/common/sampling.cpp
                 logits = llama_cpp.llama_get_logits(self.ctx)
                 n_vocab = llama_cpp.llama_n_vocab(self.model)
 
@@ -431,7 +434,16 @@ class FlowEngine:
                 llama_cpp.llama_sample_repetition_penalties(ctx=self.ctx, candidates=candidates_p, last_tokens_data=_arr, 
                                             penalty_last_n=c_size_t(last_n_repeat), penalty_repeat=c_float(repeat_penalty),
                                             penalty_freq=c_float(frequency_penalty), penalty_present=c_float(presence_penalty))
-                if mirostat == 1:
+
+                if grammar is not None and grammar.grammar is not None:
+                    llama_cpp.llama_sample_grammar(ctx=self.ctx, candidates=candidates_p, grammar=grammar.grammar)
+
+                if n_temp < 0.0:
+                    id = llama_cpp.llama_sample_softmax(ctx=self.ctx, candidates=candidates_p)
+                elif n_temp == 0:
+                    # Greedy sampling
+                    id = llama_cpp.llama_sample_token_greedy(self.ctx, candidates_p)
+                elif mirostat == 1:
                     mirostat_mu = 2.0 * mirostat_tau
                     mirostat_m = 100
                     llama_cpp.llama_sample_temperature(ctx=self.ctx, candidates=candidates_p, temp=c_float(n_temp))
@@ -444,15 +456,19 @@ class FlowEngine:
                         tau=c_float(mirostat_tau), eta=c_float(mirostat_eta), mu=c_float(mirostat_mu))
                 else:
                     # Temperature sampling
+                    min_keep = c_size_t(1)
                     llama_cpp.llama_sample_top_k(ctx=self.ctx, candidates=candidates_p,
-                                                 k=top_k, min_keep=c_size_t(1))
+                                                 k=top_k, min_keep=min_keep)
                     llama_cpp.llama_sample_tail_free(ctx=self.ctx, candidates=candidates_p,
-                                                     z=c_float(n_tfs_z), min_keep=c_size_t(1))
+                                                     z=c_float(n_tfs_z), min_keep=min_keep)
                     llama_cpp.llama_sample_typical(ctx=self.ctx, candidates=candidates_p,
-                                                   p=c_float(n_typical_p), min_keep=c_size_t(1))
+                                                   p=c_float(n_typical_p), min_keep=min_keep)
                     llama_cpp.llama_sample_top_p(ctx=self.ctx, candidates=candidates_p,
-                                                 p=c_float(n_top_p), min_keep=c_size_t(1))
-                    llama_cpp.llama_sample_temperature(ctx=self.ctx, candidates=candidates_p, temp=c_float(n_temp))
+                                                 p=c_float(n_top_p), min_keep=min_keep)
+                    llama_cpp.llama_sample_min_p(ctx=self.ctx, candidates=candidates_p,
+                                                 p=c_float(n_top_p), min_keep=min_keep)
+                    llama_cpp.llama_sample_temperature(ctx=self.ctx, candidates=candidates_p,
+                                                 temp=c_float(n_temp))
                     id = llama_cpp.llama_sample_token(self.ctx, candidates_p)
 
                 n = llama_cpp.llama_token_to_piece(
@@ -467,12 +483,12 @@ class FlowEngine:
                     running = False
                     # TODO Do I need to inject a newline in-context here?
                     id = None
-                    return None
-                elif id == 2 and n_generated == 0:
+                    return response_tokens
+                elif id == 2 and (n_generated == 0 or last_id == 13):
                     # 2 is '', repeating, this is bad model output.
                     running = False
                     id = None
-                    return None
+                    return response_tokens
                 elif (last_piece, piece) in sequence_set:
                     logger.debug(f"Break ({len(log_chunks)}): sequence {last_piece}, {piece} ({id})")
                     running = False
@@ -494,6 +510,7 @@ class FlowEngine:
                     tokens = (llama_cpp.llama_token * 1)(id)
                     return_code = llama_cpp.llama_eval(ctx=self.ctx, tokens=tokens, n_tokens=1, n_past=self.n_past)
                     log_chunks.append(piece)
+                    log_ids.append(id)
                     if return_code != 0:
                         logger.error(f"Break - Model Eval return code {return_code}")
                         running = False
@@ -508,13 +525,15 @@ class FlowEngine:
                     remaining_tokens -= 1
                     last_piece = piece
                     last_id = id
+                    if grammar is not None:
+                        llama_cpp.llama_grammar_accept_token(ctx=self.ctx, token=llama_cpp.llama_token(id), grammar=grammar.grammar)
 
                 if piece in stop_set:
                     running = False
 
                 if len(log_chunks) > 0 and (not running or len(log_chunks) % log_chunk_length == 0):
                     logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
-                    #logger.debug(f"Tokens ({n_generated}): {log_chunks}")
+                    logger.debug(f"Tokens ({n_generated}): {log_chunks}, {log_ids}")
                     log_chunks = []
 
                 if not running:

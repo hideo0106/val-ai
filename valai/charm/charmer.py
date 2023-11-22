@@ -147,7 +147,8 @@ class Charmer:
     @classmethod
     def from_config(cls, **kwargs) -> 'Charmer':
         config = { 
-            'scene_path': 'scene/verana',
+            'resources_path': 'resources',
+            'scene_name': 'verana',
             'player': '$player',
             'party': [],
             'location_name': 'Verana',
@@ -157,15 +158,6 @@ class Charmer:
         shadow = ContextShadowing.from_file(**config)
         guidance = GuidanceStrategy.from_config(**config)
         return cls(library=library, shadow=shadow, guidance=guidance)
-    
-    @classmethod
-    def init_game(cls, **kwargs) -> None:
-        from .loader import load
-        config = { 
-            'database_uri': 'sqlite:///local/char.db',
-            'scene_path': 'scene/verana',
-            **kwargs }
-        load(**config)
     
     def save_game(self, **kwargs) -> str:
         history = self.past_history + self.current_history
