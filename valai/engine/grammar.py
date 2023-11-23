@@ -8,6 +8,7 @@ import os
 logger = logging.getLogger(__name__)
 
 def load_grammar(grammar_file : str, grammar_path : str, **kwargs) -> LlamaGrammar:
+    """ Load a GBNF grammar from a file, returning a llama_cpp.LlamaGrammar object. """
     return LlamaGrammar.from_file(os.path.join(grammar_path, grammar_file), verbose=False)
     
 if __name__ == "__main__":

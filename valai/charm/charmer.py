@@ -248,6 +248,8 @@ class Charmer:
         turn = []
         player_count = 2 if include_player else 1
         for i in range(1,5):
+            if i > len(history) or len(history[-i]) == 0:
+                continue
             if i > 1 and history[-i][0] == '>':
                 player_count -= 1
 

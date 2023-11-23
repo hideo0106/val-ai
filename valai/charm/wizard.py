@@ -7,7 +7,8 @@ from typing import Optional
 
 from ..analysis.summarizer import ChainOfAnalysis
 from ..ioutil import CaptureFD
-from ..engine.llamaflow import FlowEngine, EngineException
+from ..engine.llamaflow import FlowEngine, EngineException, OutputHandler
+from ..engine.grammar import load_grammar
 
 from .charmer import Charmer
 from .token import TokenFeatures
@@ -19,12 +20,10 @@ logger = logging.getLogger(__name__)
 # implementation of the context shadowing concept.
 
 class CharmWizard:
-    def __init__(self, charmer : Charmer, engine : FlowEngine, system : Optional[str] = None):
+    def __init__(self, charmer : Charmer, engine : FlowEngine, output : OutputHandler):
         self.charmer = charmer
         self.engine = engine
-        if system is not None:
-            self.current_system = system
-            self.engine.set_context(system_context='system', prompt=self.current_system, **kwargs)
+        self.output = output
 
     def reset_engine(self, restart : bool = False, **kwargs) -> bool:
         try:
@@ -35,17 +34,42 @@ class CharmWizard:
         except EngineException as e:
             logging.error(f"Engine Exception: {e}")
             return False
-    
+
+    @staticmethod
+    def expand_config(config : dict, **kwargs) -> dict:
+        # TODO this should be a typed dict coming out
+        config = {
+            'resources_path': 'resources',
+            'scene_name': 'novara',
+            'model_guidance': 'dialog',
+            'resources_path': 'resources',
+            'scene_name': 'verana',
+            'player': '$player',
+            'location_name': 'Verana',
+            'model_guidance': 'dialog',
+            **config,
+            **kwargs
+        }
+        config['scene_path'] = os.path.join(config['resources_path'], 'scene', config['scene_name'])
+        config['grammar_path'] = os.path.join(config['resources_path'], 'grammar')
+        return config
+
     @classmethod
     def from_config(cls, **kwargs):
+        output = OutputHandler()
         charmer = Charmer.from_config(**kwargs)
         if not kwargs.get('verbose', False):
             with CaptureFD() as co:
-                engine = FlowEngine.from_config(**kwargs)
+                engine = FlowEngine.from_config(output=output, **kwargs)
         else:
-            engine = FlowEngine.from_config(**kwargs)
-        
-        return cls(charmer=charmer, engine=engine, system=charmer.system(**kwargs))
+            engine = FlowEngine.from_config(output=output, **kwargs)
+
+        self = cls(charmer=charmer, engine=engine, output=output)
+        self.current_system = self.charmer.system(**kwargs)
+        return self
+
+    def println(self, text : str, **kwargs):
+        self.output.handle_system(text)
 
     def init(self, restart : bool = True, load_history : bool = True, load_shadow : bool = True, **kwargs) -> bool:
         if restart:
@@ -76,7 +100,7 @@ class CharmWizard:
         token_features = TokenFeatures.from_history(history=history, **kwargs)
         scenes = token_features.scene_documents(**kwargs)
         for c in scenes:
-            print(f"{c}")
+            self.println(f"{c}")
 
         return True
 
@@ -98,7 +122,7 @@ class CharmWizard:
         self.reset_engine(restart=True, **kwargs)
 
     def show_history(self, n_show : int = 10, **kwargs):
-        print(self.charmer.format_history(n_show=n_show, **kwargs))
+        self.println(self.charmer.format_history(n_show=n_show, **kwargs))
 
     def read_prompt(self, prompt_style: str, prompt_path : str = "prompts", **kwargs) -> str:
         filename = f"{prompt_path}/{prompt_style}.txt"
@@ -110,7 +134,8 @@ class CharmWizard:
         return data
 
     def run_charm(self, r_length : int, r_temp : float, refresh_threshold : int = 10, **kwargs):
-        print("Starting Game...")
+        self.println("Starting Game...")
+        grammar = load_grammar(grammar_file='charm.gbnf', **kwargs)
         self.init(**kwargs)
 
         running = True
@@ -127,54 +152,58 @@ class CharmWizard:
                     additional = ''
                     if action == '':
                         continue
+                    elif action == 'gram':
+                        grammar = load_grammar(grammar_file='charm.gbnf', **kwargs)
+                        self.println("Reloaded Grammar")
+                        continue
                     elif action == 'chapter':
                         cod = ChainOfAnalysis(engine=self.engine)
                         result = cod(data='\n'.join(self.charmer.current_history), subject="Dialog", iterations=2, observations=7, paragraphs=2, theories=5, **kwargs)
-                        print(result)
+                        self.println(result)
                         continue
                     elif action == 'summary':
                         cod = ChainOfAnalysis(engine=self.engine)
                         result = cod.summarize(subject="Dialog", paragraphs=3, s_length=150, s_temp=0.7, **kwargs)
-                        print(result)
+                        self.println(result)
                         continue
                     elif action == 'improve':
                         cod = ChainOfAnalysis(engine=self.engine)
                         result = cod.improve(subject="Dialog", theories=5, s_length=50, s_temp=0.7, **kwargs)
-                        print(result)
+                        self.println(result)
                         continue
                     elif action == 'resummarize':
                         cod = ChainOfAnalysis(engine=self.engine)
                         result = cod.resummarize(subject="Dialog", paragraphs=2, s_length=250, s_temp=0.7, **kwargs)
-                        print(result)
+                        self.println(result)
                         continue
                     elif action == 'show':
                         self.show_history(**kwargs)
                         continue
                     elif action == 'load':
-                        print('Loading Game')
+                        self.println('Loading Game')
                         self.execute_load(**kwargs)
                         self.show_history(**kwargs)
                         refresh = refresh_threshold
-                        print('Game Loaded')
+                        self.println('Game Loaded')
                         continue
                     elif action == 'renew':
-                        print('Refreshing Shadow')
+                        self.println('Refreshing Shadow')
                         self.execute_shadow_reload(**kwargs)
                         self.show_history(**kwargs)
                         continue
                     elif action == 'scene':
-                        print('Scene Analysis')
+                        self.println('Scene Analysis')
                         self.execute_scene_analysis(**kwargs)
                         continue
                     elif action == 'save':
-                        print('Saving Game')
+                        self.println('Saving Game')
                         self.execute_save(**kwargs)
-                        print('Game Saved')
+                        self.println('Game Saved')
                         continue
                     elif action == 'last':
-                        print('Last')
+                        self.println('Last')
                         turn = self.charmer.last_turn(include_player=True, **kwargs)
-                        print('\n'.join(turn))
+                        self.println('\n'.join(turn))
                         continue
                     elif action == 'expand':
                         self.reset_engine(restart=False)
@@ -183,15 +212,15 @@ class CharmWizard:
                     elif action == 'back':
                         self.charmer.pop()
                         refresh = 0
-                        print("Removed Last Entry")
+                        self.println("Removed Last Entry")
                         turn = self.charmer.last_turn(include_player=True, **kwargs)
-                        print('\n'.join(turn))
+                        self.println('\n'.join(turn))
                         continue
                     elif action == 'context':
-                        print('Context')
-                        print(f"Tokens {self.engine.n_past}")
-                        print(f"System {self.engine.n_system}")
-                        print(f"Context {self.engine.n_ctx}")
+                        self.println('Context')
+                        self.println(f"Tokens {self.engine.n_past}")
+                        self.println(f"System {self.engine.n_system}")
+                        self.println(f"Context {self.engine.n_ctx}")
                         continue
                     elif asplit[0] == 'retry':
                         self.charmer.pop()
@@ -200,7 +229,7 @@ class CharmWizard:
                             additional = asplit[1]
                         retry = True
                         refresh -= 1
-                        print(f"Retrying Last Entry: {player_input}")
+                        self.println(f"Retrying Last Entry: {player_input}")
                     elif asplit[0] == 'write':
                         self.engine.execute(prompt=f"{asplit[1]}", **kwargs)
                         continue
@@ -222,14 +251,15 @@ class CharmWizard:
                             ix += 1
                             if prefix is not None:
                                 self.engine.execute(prompt=f"{prefix}", **kwargs)
-                            result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
+                            result = self.engine.read(max_tokens=r_length, n_temp=r_temp, token_handler=self.output,
+                                                      **self.charmer.guidance.tokens, **kwargs)
                             if result is None:
                                 # Rollback
                                 self.engine.reload_turn(**kwargs)
                                 logger.warn("No response from engine, rolling back.")
                                 break
                             response = ''.join(result).strip()
-                            print(f"{response}")
+                            self.println(f"{response}")
                             continue
                         continue
                     elif asplit[0] == 'read':
@@ -240,12 +270,12 @@ class CharmWizard:
                             logger.warn("No response from engine, rolling back.")
                             continue
                         response = ''.join(result).strip()
-                        print(f"{response}")
+                        self.println(f"{response}")
                         continue
                     elif asplit[0] == 'wipe':
                         self.engine.reset()
                         self.init(restart=False, load_history=False, load_shadow=False, **kwargs)
-                        print('Engine Wiped')
+                        self.println('Engine Wiped')
                         continue
                     elif asplit[0] == 'prompt_reset':
                         prompt = self.read_prompt(asplit[1], **kwargs)
@@ -258,7 +288,7 @@ class CharmWizard:
                         continue
                     elif asplit[0] == 'historyinfo':
                         hist = self.charmer.get_history(expand_history=True, **kwargs)
-                        print(f'History Length: {len(hist)}')
+                        self.println(f'History Length: {len(hist)}')
                         continue
                     elif asplit[0] == 'history':
                         args = asplit[1].split(" ")
@@ -271,8 +301,8 @@ class CharmWizard:
                         logger.info(f"Playing History: {start} {end}")
                         history = self.charmer.get_history(expand_history=True, start=start, end=end, **kwargs)
                         for h in history:
-                            print(h)
-                        print(f"History Length: {len(history)}")
+                            self.println(h)
+                        self.println(f"History Length: {len(history)}")
                         continue
                     elif asplit[0] == 'play_history':
                         args = asplit[1].split(" ")
@@ -303,37 +333,37 @@ class CharmWizard:
                         self.engine.execute(prompt=prompt, retry=False, **kwargs)
                         continue
                     elif action == 'restart':
-                        print('Are you sure? (y/N)')
+                        self.println('Are you sure? (y/N)')
                         idata = input('> ')
                         if idata == 'y':
-                            print('Game Restarted')
+                            self.println('Game Restarted')
                             self.charmer.init_history(load=False, **kwargs)
                             self.init(restart=True, load_history=False, load_shadow=True, **kwargs)
                             self.show_history(**kwargs)
                             refresh = refresh_threshold
                             continue
                         else:
-                            print('Continuing')
+                            self.println('Continuing')
                             continue
                     elif action == 'history':
-                        print('History')
+                        self.println('History')
                         self.show_history(n_show = -1, **kwargs)
                         continue
                     elif action == 'quit':
-                        print('Are you sure? (y/N)')
+                        self.println('Are you sure? (y/N)')
                         quitting = input('> ')
                         if quitting == 'y':
-                            print('Goodbye')
+                            self.println('Goodbye')
                             exit(0)
                         else:
-                            print('Continuing')
+                            self.println('Continuing')
                             continue
                     elif action == 'help':
-                        print('Commands:')
-                        print('  chapter, show, load, renew, save, last, expand, pop, restart, retry, history, quit, help')
-                        print('  read, readall, write, wipe, prompt, prompt_reset, historyinfo, play_history')
-                        print('  scene, summary, improve, resummarize')
-                        print('  context, back')
+                        self.println('Commands:')
+                        self.println('  chapter, show, load, renew, save, last, expand, pop, restart, retry, history, quit, help')
+                        self.println('  read, readall, write, wipe, prompt, prompt_reset, historyinfo, play_history')
+                        self.println('  scene, summary, improve, resummarize')
+                        self.println('  context, back')
                         continue
                     else:
                         player_input = f"> {action.strip()}"
@@ -359,50 +389,20 @@ class CharmWizard:
                     refresh -= 1
                     retry = False
                 zx = False
+                grammar.reset()
                 for i in range(3):
-                    if zx:
-                        # We just saw ZxdrOS, let's get a response from the narrator.
-                        prefix = "Narrator:"
-                        self.engine.execute(prompt=prefix, **kwargs)
-                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
-                        if result is None:
-                            # Rollback
-                            self.engine.reload_turn(**kwargs)
-                        else:
-                            response = ''.join(result).strip()
-                            if len(response) <= 1:
-                                logger.warn("No response from engine.")
-                            response = f"{prefix} {response}"
-                        zx = False
+                    result = self.engine.read(max_tokens=r_length, n_temp=r_temp, grammar=grammar, **self.charmer.guidance.tokens, **kwargs)
+                    if result is None:
+                        # Rollback
+                        self.engine.reload_turn(**kwargs)
                     else:
-                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
-                        if result is None:
-                            # Rollback
-                            self.engine.reload_turn(**kwargs)
-                        else:
-                            response = ''.join(result).strip()
-                            if len(response) <= 1 and i == 0:
-                                logger.warn("No response from engine.")
-                            if additional != '':
-                                response = f"{additional}{response}"
-                                additional = ''
-                    if len(response) <= 1:
-                        if i != 0:
-                            break
-                        moods = ['inquiring', 'insulting', 'amused', 'informative', 'angry', 'sad', 'happy', 'silly', 'suspicious', 'fearful', 'confused', 'disgusted', 'surprised', 'neutral']
-                        # This usually occurs when a model is falling outside of it's trained context, but sometimes it's just a bad response.
-                        # Let's bootstrap the recovery with a character interaction.
-                        # The first response turn, We don't want to break, but we do want a response.  Let's get ZxdrOS involved?
-                        mood = random.choice(moods)
-                        prefix = f"ZxdrOS: ({mood})  So, the $player wants to"
-                        self.engine.execute(prompt=prefix, **kwargs)
-                        result = self.engine.read(max_tokens=r_length, n_temp=r_temp, **self.charmer.guidance.tokens, **kwargs)
                         response = ''.join(result).strip()
-                        if len(response) <= 1:
+                        if len(response) <= 1 and i == 0:
                             logger.warn("No response from engine.")
-                        response = f"{prefix} {response}"
-                        zx = True
-                    print(f"{response}")
+                        if additional != '':
+                            response = f"{additional}{response}"
+                            additional = ''
+                    # self.println(f"{response}")
                     self.charmer.add_history('model', response)
                     check_input = True
             except EngineException as e:
@@ -413,8 +413,9 @@ class CharmWizard:
                 check_input = False
 
 def run_charm(**kwargs):
-    app = CharmWizard.from_config(**kwargs)
-    app.run_charm(**kwargs)
+    config = CharmWizard.expand_config(kwargs)
+    app = CharmWizard.from_config(**config)
+    app.run_charm(**config)
 
 if __name__ == "__main__":
     from ..engine.llamaflow import FlowEngine

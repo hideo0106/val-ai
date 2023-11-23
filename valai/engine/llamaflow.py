@@ -532,8 +532,9 @@ class FlowEngine:
                     running = False
 
                 if len(log_chunks) > 0 and (not running or len(log_chunks) % log_chunk_length == 0):
-                    logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
-                    logger.debug(f"Tokens ({n_generated}): {log_chunks}, {log_ids}")
+                    # Generally superseded by the output handler
+                    #logger.debug(f"Generated ({n_generated}): {''.join(log_chunks).strip()}")
+                    #logger.debug(f"Tokens ({n_generated}): {log_chunks}, {log_ids}")
                     log_chunks = []
 
                 if not running:

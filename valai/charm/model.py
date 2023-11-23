@@ -97,29 +97,29 @@ class Character:
         return character_data
 
     def sample_dialog(self):
-        yield f"> What is {self.name}'s job?"
-        yield f"ZxdrOS: (job) {self.name} is a {self.job}."
         yield f"> I look at {self.name}."
+        yield f"ZxdrOS: (job) {self.name} is a {self.job}."
         yield f"Narrator: (looking) {self.name} {self.description}"
         yield f"> What is {self.name} doing?"
-        yield f"ZxdrOS: (status) {self.name} is {self.status}."
+        yield f"ZxdrOS: (informative) {self.name} is {self.status}."
+        yield f"Narrator: (looking) {self.name} is going about {self.status}."
 
         yield f"> How does {self.name} feel about $player?"
         if (abs(self.disposition) - 15) < 0:
-            yield f"ZxdrOS: (relationship) {self.name} doesn't have any strong opinions about $player."
             yield f'{self.name}: (curious) I see a new person in town. They open their mouth to speak, "...".  Perhaps they will speak to me first.'
+            yield f"ZxdrOS: (relationship) {self.name} doesn't have any strong opinions about $player."
         elif self.disposition > 50:
-            yield f"ZxdrOS: (relationship) {self.name} loves $player."
             yield f'{self.name}: (happy) I see $player.  I hope they are doing well.'
+            yield f"ZxdrOS: (relationship) {self.name} loves $player."
         elif self.disposition > 15:
-            yield f"ZxdrOS: (relationship) {self.name} likes $player."
             yield f'{self.name}: (neutral) I see $player.  I wonder what they are doing here.'
+            yield f"ZxdrOS: (relationship) {self.name} likes $player."
         elif self.disposition > -50:
-            yield f"ZxdrOS: (relationship) {self.name} dislikes $player."
             yield f'{self.name}: (unhappy) I see $player.  I hope they don\'t bother me.'
+            yield f"ZxdrOS: (relationship) {self.name} dislikes $player."
         else:
-            yield f"ZxdrOS: (relationship) {self.name} hates $player."
             yield f'{self.name}: (angry) I hope $player dies!'
+            yield f"ZxdrOS: (relationship) {self.name} hates $player."
 
         return []
 

@@ -1,32 +1,30 @@
-> ZxdrOS, I am $player.
-ZxdrOS: (authoratative) $player, I am the Game Master.  Your fate is in my hands.
-
-> What is the purpose of this game?
-Narrator: (pondering) You are entering in to the world of Pinnacle.  I, am your narrator, your guide through these lands.  I will describe the things you see, but ZxdrOS the Game Master will determine your fate!  Are you ready?  For, the very fate of the world hangs in your hands, $player.
-
-> What can I do?
-ZxdrOS:  (annoyed) Why don't you try *look*ing around, $player?  
-Narrator: (hesitant) I'd better not tell the player too much.
 
 > *look* around
-Narrator:  (describing view)  A senic view, $player can see a river, a forest, and a mountain range in the distance.  There is a small village nearby, and a road leading to it.  You hear the sounds of birds chirping, and the wind rustling through the trees; a blacksmith's hammer rings in the distance.
+ZxdrOS: (informative) You are in the middle of the village.
+Narrator:  (describing view)  A senic view, $player can see a river, a forest, and a mountain range in the distance.  There is a small village nearby, and a road leading to it.  You hear the sounds of birds chirping, and the wind rustling through the trees; a blacksmith's hammer rings from a stone building at the edge of town.
 
 > fly
 ZxdrOS: (checking sheet) {player_stats}... You can't fly!  I don't see that on your ability sheet!
+Narrator:  (failure) You can't fly!  You flap your arms.
 
 > spot the trap
 ZxdrOS: (checking sheet) {player_stats}... I'll have to check these abilities...  You are observant, and it wasn't hidden very well.  You find it.
+Narrator:  (success) You spot the trap, the tripwire is clearly visible.
 
 > *look* at ZxdrOS
+ZxdrOS: (annoyed) *Eye-roll*  I'm right here, you know.
 Narrator:  (describing ZxdrOS) ZxdrOS is practically invisible.  He flickers liks a shadow, warping the world around him, bolts of dark arcane lightning flashing about his spherical body.  You seem to be the only person that can see him.
 
 > look at Narrator
+ZxdrOS: (annoyed) That's not a person, it's just a disembodied voice you hear in your head.
 Narrator:  (not there) That person isn't in sight.
 
 > *take* the rock
+ZxdrOS: (checking sheet) {player_stats}... You pick up the rock.
 Narrator:  (take) Upon examining the rock, you find that it is oblong, and smooth.  A deep grey in color, it is the kind of stone you might find in a stream bed.
 
 > *travel* to a location
+ZxdrOS: (checking sheet) {player_stats}... That's a distance a ways.
 Narrator:  (travel) You spend some time traveling to your location.  On arrival, you see many sights.  The person you are looking for is here.
 
 > *attack* the stone giant
@@ -36,6 +34,3 @@ Narrator:  (failure) Your swing bounces off of the giant's tough hide.
 > *attack* the deer
 ZxdrOS: (checking sheet) {player_stats}... Your arrow pierces the deer in it's side, killing it.
 Narrator: (success!) Your arrow flies true, and pierces into the deer's heart.  It immediately falls over, dead.
-
-> *look* at myself
-Narrator:  (describing $player) You see a handsome young man, athletic build, tall, with chestnut-brown hair.  You are clad in a well-fitting tunic, and wear sturdy boots and a cloak for travelling.  In your hand, you have a simple staff, upon which is tied your bundle of belongings.
