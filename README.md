@@ -25,7 +25,6 @@ mkdir local
 # be sure to ln -s your model folders into local/models
 cd local
 # This is a volatile dependency chain, so both llama-cpp and llama-cpp-python must be built from source and updated frequently
-git clone --recurse-submodules https://github.com/abetlen/llama-cpp-python
 # You need ot make it with your llama build args or you won't get acceleration
 CMAKE_ARGS="-DLLAMA_CUBLAS=on" python3 -m pip install ./llama-cpp-python/ --force-reinstall
 ```
